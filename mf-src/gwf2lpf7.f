@@ -560,6 +560,7 @@ C5------NON-CONVERTIBLE LAYER, SO USE PRIMARY STORAGE
             RHO=SC1(J,I,K)*TLED
             HCOF(J,I,K)=HCOF(J,I,K)-RHO
             RHS(J,I,K)=RHS(J,I,K)-RHO*HOLD(J,I,K)
+            call SDA_AddSC(J,I,K, SC1(J,I,K))
   140       CONTINUE
          ELSE
 C
@@ -586,6 +587,7 @@ C
 C6D-----ADD STORAGE TERMS TO RHS AND HCOF.
             HCOF(J,I,K)=HCOF(J,I,K)-SNEW
             RHS(J,I,K)=RHS(J,I,K) - SOLD*(HOLD(J,I,K)-TP) - SNEW*TP
+            call SDA_AddSC(J,I,K, SNEW*DELT)
 C
   180       CONTINUE
          END IF

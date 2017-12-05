@@ -5154,6 +5154,7 @@ C             QAQFLOW IS CALCULATED IN SSWR_RG_QAQ FUNCTION CALL
             IF ( INWTCNT.EQ.2 ) THEN
               RHS(jc,ir,kact)  = RHS(jc,ir,kact)  - rc 
               HCOF(jc,ir,kact) = HCOF(jc,ir,kact) - hc
+              call SDA_AddCB(jc,ir,kact,23,hc,0.)
             END IF
           END DO LAYERS
 C
@@ -5251,6 +5252,7 @@ C         LINEAR RELATION BETWEEN GROUNDWATER HEAD AND GROUNDWATER EVAPOTRANSPIR
           RHS(jc,ir,k)  = RHS(jc,ir,k) + gwet -
      2                    gwet * REACH(i)%GBELEV / getextd
           HCOF(jc,ir,k) = HCOF(jc,ir,k) - gwet / getextd
+          call SDA_AddCB(jc,ir,k,24,gwet/getextd,getextd)
         END IF
 C         DO NOT SIMULATE GROUNDWATER EVAPOTRANSPIRATION IF
 C         GROUNDWATER LEVEL IS BELOW EXTINCTION DEPTH

@@ -41,7 +41,7 @@ C
      &           'HYD ', 'SFR ', '    ', 'GAGE', 'LVDA', '    ', 'LMT6',  ! 49
      &           'MNW2', 'MNWI', 'MNW1', 'KDEP', 'SUB ', 'UZF ', 'gwm ',  ! 56
      &           'SWT ', 'cfp ', 'PCGN', '    ', '    ', '    ', 'nrs ',  ! 63
-     &           'SWR ', 'SWI2', '    ', '    ', '    ', '    ', '    ',  ! 70
+     &           'SWR ', 'SWI2', 'SDA ', '    ', '    ', '    ', '    ',  ! 70
      &           30*'    '/
 C     ------------------------------------------------------------------
 C
@@ -79,6 +79,10 @@ C6------ALLOCATE AND READ (AR) PROCEDURE
      1  'MNW1 and MNW2 cannot both be active in the same simulation'
         CALL USTOP(' ')
       END IF
+
+      !SDA: check if it needs to run the baseline
+      IF(IUNIT(66).GT.0) CALL SDA_Ini(IUNIT(66))
+
       IF(IUNIT(1).GT.0) CALL GWF2BCF7AR(IUNIT(1),IGRID)
       IF(IUNIT(23).GT.0) CALL GWF2LPF7AR(IUNIT(23),IGRID)
       IF(IUNIT(37).GT.0) CALL GWF2HUF7AR(IUNIT(37),IUNIT(47),
@@ -240,6 +244,10 @@ C7C2----ITERATIVELY FORMULATE AND SOLVE THE FLOW EQUATIONS.
 C
 C7C2A---FORMULATE THE FINITE DIFFERENCE EQUATIONS.
             CALL GWF2BAS7FM(IGRID)
+
+            ! SDA: initalize sda for new time step
+            if (IUNIT(66).GT.0) call SDA_IterIni
+
             IF(IUNIT(1).GT.0) CALL GWF2BCF7FM(KKITER,KKSTP,
      1                               KKPER,IGRID)
             IF(IUNIT(23).GT.0) CALL GWF2LPF7FM(KKITER,
@@ -506,6 +514,12 @@ C7C6---JUMP TO END OF PROGRAM IF CONVERGENCE WAS NOT ACHIEVED.
               WRITE(IOUT,*) 'CONTINUING EXECUTION'
             END IF
           END IF
+
+          ! SDA: finalize sda for new time step
+          if (IUNIT(66).GT.0) then
+            call SDA_IterEnd(KKSTP,KKPER)
+          endif
+
 C
 C-----END OF TIME STEP (KSTP) AND STRESS PERIOD (KPER) LOOPS
    90   CONTINUE
@@ -585,6 +599,13 @@ C10-----END OF PROGRAM.
       ELSE
         WRITE(*,*) ' Normal termination of simulation'
       END IF
+
+
+      ! SDA: Start SDA Initialize
+      IF(IUNIT(66)>0) then
+        WRITE(*, *) 'Change NSEN to Positive to run scenario analysis!'
+      end if
+
       CALL USTOP(' ')
 C
       END

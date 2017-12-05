@@ -1,0 +1,134 @@
+# Define the directories for the object and module files,
+# the executable, and the executable name and path.
+OBJDIR = ./obj_temp2win
+BINDIR =
+PROGRAM = mf2005-sda2
+
+SOURCEDIR1=../src
+
+VPATH = \
+	../mf-src \
+	../sda-src
+
+.SUFFIXES: .c .cpp .f .f90 .F90 .fpp
+
+HDFDIR = \
+	/I"D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\Release" \
+	/I"D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\static\Release" 
+#
+#	/LIBPATH:"D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\static\Release" \
+#	/LIBPATH:"D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\Release" \
+
+HDFLIB = \
+        "D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\Release\libhdf5_fortran.lib" \
+        "D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\Release\libhdf5_f90cstub.lib" \
+        "D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\Release\libhdf5.lib" 
+
+# Define the Fortran compile flags
+F90 = ifort
+F90FLAGS = -O2 -traceback -fpe0 /libs:static /nologo $(HDFDIR)
+
+# Define the C compile flags
+CC = icl
+CFLAGS = -O2 /MT
+
+
+MF_OBJ = \
+$(OBJDIR)/utl7.obj \
+$(OBJDIR)/gwfsfrmodule.obj \
+$(OBJDIR)/gwf2bas7.obj \
+$(OBJDIR)/gwf2rch7.obj \
+$(OBJDIR)/gmg7_c_interface.obj \
+$(OBJDIR)/sip7.obj \
+$(OBJDIR)/gwf2res7.obj \
+$(OBJDIR)/gwf2chd7.obj \
+$(OBJDIR)/gwf2swt7.obj \
+$(OBJDIR)/obs2bas7.obj \
+$(OBJDIR)/obs2chd7.obj \
+$(OBJDIR)/gwf2huf7.obj \
+$(OBJDIR)/gwf2ets7.obj \
+$(OBJDIR)/pcg7.obj \
+$(OBJDIR)/hufutl7.obj \
+$(OBJDIR)/gwf2str7.obj \
+$(OBJDIR)/de47.obj \
+$(OBJDIR)/gwf2ibs7.obj \
+$(OBJDIR)/gwf2bcf7.obj \
+$(OBJDIR)/pcgn_solve2.obj \
+$(OBJDIR)/gwf2hfb7.obj \
+$(OBJDIR)/gwflakmodule.obj \
+$(OBJDIR)/gwfuzfmodule.obj \
+$(OBJDIR)/gwf2gag7.obj \
+$(OBJDIR)/gwf2evt7.obj \
+$(OBJDIR)/gwf2lpf7.obj \
+$(OBJDIR)/gwf2drn7.obj \
+$(OBJDIR)/gwf2fhb7.obj \
+$(OBJDIR)/mhc7.obj \
+$(OBJDIR)/gwf2sub7.obj \
+$(OBJDIR)/gwf2wel7.obj \
+$(OBJDIR)/gmg7.obj \
+$(OBJDIR)/gwf2drt7.obj \
+$(OBJDIR)/parutl7.obj \
+$(OBJDIR)/gwf2mnw27.obj \
+$(OBJDIR)/gwf2ghb7.obj \
+$(OBJDIR)/gwf2riv7.obj \
+$(OBJDIR)/gwf2hydmod7.obj \
+$(OBJDIR)/obs2str7.obj \
+$(OBJDIR)/gwf2mnw2i7.obj \
+$(OBJDIR)/pcgn2.obj \
+$(OBJDIR)/gwf2sfr7.obj \
+$(OBJDIR)/gwf2swi27.obj \
+$(OBJDIR)/gwf2lak7.obj \
+$(OBJDIR)/gwf2swr7.obj \
+$(OBJDIR)/gwf2swr7util.obj \
+$(OBJDIR)/obs2riv7.obj \
+$(OBJDIR)/obs2drn7.obj \
+$(OBJDIR)/obs2ghb7.obj \
+$(OBJDIR)/gwf2uzf1.obj \
+$(OBJDIR)/gwf2mnw17.obj \
+$(OBJDIR)/mf2005.obj \
+$(OBJDIR)/lmt8.obj
+
+SDA_OBJ = \
+$(OBJDIR)/sda2.obj \
+$(OBJDIR)/sda_utl.obj
+
+C_OBJ = \
+$(OBJDIR)/r_vector.obj \
+$(OBJDIR)/mf2kgmg.obj \
+$(OBJDIR)/solvers.obj \
+$(OBJDIR)/ccfd.obj 
+
+
+# Define task functions
+
+# Compile and link the executable
+all: mf2005
+
+# Define the objects that make up mf2005
+mf2005: mf sda 
+	$(F90) $(F90FLAGS) -o $(PROGRAM)  $(HDFLIB) $(C_OBJ) $(SDA_OBJ) $(MF_OBJ)
+	
+mf: $(C_OBJ) $(MF_OBJ) 
+
+sda: $(SDA_OBJ)
+
+	
+# ifort in Windows: 
+$(OBJDIR)/%.obj : %.f
+	$(F90) $(F90FLAGS) /c $< -o $@ /object:$(OBJDIR)\\ /module:$(OBJDIR)\\ 
+
+$(OBJDIR)/%.obj : %.f90
+	$(F90) $(F90FLAGS) /c $< -o $@ /object:$(OBJDIR)\\ /module:$(OBJDIR)\\ 
+
+$(OBJDIR)/%.obj : %.F90
+	$(F90) $(F90FLAGS) /c $< -o $@ /object:$(OBJDIR)\\ /module:$(OBJDIR)\\ 
+
+$(OBJDIR)/%.obj : %.fpp
+	$(F90) $(F90FLAGS) /c $< -o $@ /object:$(OBJDIR)\\ /module:$(OBJDIR)\\ 
+
+$(OBJDIR)/%.obj : %.c
+	$(CC) $(CFLAGS) /c $< -o $@  /Fo:$(OBJDIR)\\
+
+$(OBJDIR)/%.obj : %.cpp
+	$(CC) $(CFLAGS) /c $< -o $@  /Fo:$(OBJDIR)\\
+

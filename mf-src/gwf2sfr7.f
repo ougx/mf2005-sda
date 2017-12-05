@@ -3428,6 +3428,7 @@ C78-----STREAM LEAKAGE IS NOT HEAD DEPENDENT.
 !      end if
                 END IF
                 HCOF(ic, ir, il) = HCOF(ic, ir, il) - cstrsmooth
+          call SDA_AddCB(IC,IR,IL,8,real(cstrsmooth),real(hstrave))
               ELSE
 C
 C79-----CONSTANT STREAMBED LEAKAGE IS LIMITED BY STREAMFLOW OR 

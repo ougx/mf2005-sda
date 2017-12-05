@@ -1464,11 +1464,13 @@ C         WHEN ITYPE = 0.
                         ELSE  
                           RHS(IC,IR,IL1)=RHS(IC,IR,IL1) - STGON*CONDUC
                           HCOF(IC,IR,IL1)=HCOF(IC,IR,IL1) - CONDUC
+                     call SDA_AddCB(IC,IR,IL1,17,real(CONDUC),0.)
                         END IF
                       ELSE
                         IF ( H.GT.BOTLK ) THEN
                           RHS(IC,IR,IL1)=RHS(IC,IR,IL1) - BOTLK*CONDUC
                           HCOF(IC,IR,IL1)=HCOF(IC,IR,IL1) - CONDUC
+                     call SDA_AddCB(IC,IR,IL1,17,real(CONDUC),0.)
                         END IF
                       END IF
                     END IF
@@ -1494,10 +1496,12 @@ C          SATURATED THICKNESS.
                           IF ( H-BOTCL.GT.CLOSEZERO ) THEN
                             RHS(IC,IR,IL1)=RHS(IC,IR,IL1) - STGON*CONDUC
                             HCOF(IC,IR,IL1)=HCOF(IC,IR,IL1) - CONDUC
+                     call SDA_AddCB(IC,IR,IL1,17,real(CONDUC),0.)
                           END IF
                         ELSE IF( H-BOTCL.GT.CLOSEZERO ) THEN
                           RHS(IC,IR,IL1)=RHS(IC,IR,IL1) - BOTCL*CONDUC
                           HCOF(IC,IR,IL1)=HCOF(IC,IR,IL1) - CONDUC
+                     call SDA_AddCB(IC,IR,IL1,17,real(CONDUC),0.)
                         END IF
                       END IF
                     END IF

@@ -2364,6 +2364,7 @@ cdebug              if(iqslv.ne.0.and.kiter.gt.1.and.kiter.lt.NoMoIter) then
                 qact = ( hlim - hhnew) * cond
                 hcof(ic,ir,il) = hcof(ic,ir,il) - cond
                 rhs(ic,ir,il)  = rhs(ic,ir,il)  - cond * hlim
+                call SDA_AddCB(IC,IR,IL,19,real(cond),real(hlim))
               else
 c  Specify Q and solve for head;  add Q to RHS accumulator.
                 rhs(ic,ir,il) = rhs(ic,ir,il) - qact

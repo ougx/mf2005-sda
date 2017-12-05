@@ -2028,6 +2028,7 @@ C4------NON-CONVERTIBLE LAYER, SO USE PRIMARY STORAGE
               RHO=SC1(J,I,K)*TLED
               HCOF(J,I,K)=HCOF(J,I,K)-RHO
               RHS(J,I,K)=RHS(J,I,K)-RHO*HOLD(J,I,K)
+              call SDA_AddSC(J,I,K, SC1(J,I,K))
   140       CONTINUE
          ELSE
 C
@@ -2062,6 +2063,8 @@ C---------------Compute SC2 Component
               ENDIF
 C
 C5D-----ADD STORAGE TERMS TO RHS AND HCOF.
+
+              call SDA_AddSC(J,I,K, SC1(J,I,K))
               HCOF(J,I,K)=HCOF(J,I,K) - CHCOF
               RHS(J,I,K) = RHS(J,I,K) - CRHS
 C

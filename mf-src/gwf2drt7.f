@@ -271,6 +271,7 @@ C7------HEAD IS HIGHER THAN DRAIN. ADD TERMS TO RHS AND HCOF.
         C=DRTF(5,L)
         HCOF(IC,IR,IL)=HCOF(IC,IR,IL)-C
         RHS(IC,IR,IL)=RHS(IC,IR,IL)-C*EL
+        call SDA_AddCB(IC,IR,IL,14,C,EL)
         IF (IDRTFL.GT.0) THEN
           ILR = DRTF(6,L)
           IF (ILR.NE.0) THEN

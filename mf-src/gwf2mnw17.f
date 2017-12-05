@@ -1051,6 +1051,7 @@ c   Modify HCOF and RHS arrays
             qact = (hlim-HNEW(i,j,k))*cond
             HCOF(i,j,k) = HCOF(i,j,k) - cond
             RHS(i,j,k) = RHS(i,j,k) - cond*hlim
+            call SDA_AddCB(i,j,k,18,real(cond),real(hlim))
           ELSE
 c  Specify Q and solve for head;  add Q to RHS accumulator.
             RHS(i,j,k) = RHS(i,j,k) - qact

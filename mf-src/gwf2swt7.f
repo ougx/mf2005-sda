@@ -962,6 +962,7 @@ C4------ADD APPROPRIATE TERMS TO RHS AND HCOF
       RHS(J,I,K)=RHS(J,I,K)+CRHS
       CDIAG=-RHO2
       HCOF(J,I,K)=HCOF(J,I,K)+CDIAG
+      call SDA_AddCB(IC,IR,IL,25,CDIAG,real(PCTMP))
       ENDDO
       ENDDO
       ENDDO

@@ -446,6 +446,7 @@ C19------IF HEAD > BOTTOM THEN ADD TERMS TO RHS AND HCOF.              C
       IF(IQFLG.GT.0) GO TO 400
       RHS(IC,IR,IL)=RHS(IC,IR,IL)-CSTR*HSTR
       HCOF(IC,IR,IL)=HCOF(IC,IR,IL)-CSTR
+      call SDA_AddCB(IC,IR,IL,7,CSTR,HSTR)
       GO TO 500
 C                                                                      C
 C20------IF HEAD < BOTTOM THEN ADD TERM ONLY TO RHS.                   C

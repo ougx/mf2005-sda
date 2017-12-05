@@ -1977,6 +1977,7 @@ C6------GROUNDWATER IS DISCHARGING TO LAND SURFACE.
                 IF ( seepoutcheck.GT.CLOSEZERO ) THEN
                   RHS(ic, ir, il) = RHS(ic, ir, il) - csep*celtop
                   HCOF(ic, ir, il) = HCOF(ic, ir, il) - csep
+            call SDA_AddCB(IC,IR,IL,27,real(csep),real(celtop))
                   SEEPOUT(ic, ir) = seepoutcheck
                 END IF
               END IF

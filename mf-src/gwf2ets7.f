@@ -371,6 +371,7 @@ C                 LINEAR RELATION OF ET VS. HEAD
                 ENDIF
                 RHS(IC,IR,IL)=RHS(IC,IR,IL)+TRHS
                 HCOF(IC,IR,IL)=HCOF(IC,IR,IL)+THCOF
+                call SDA_AddCB(IC,IR,IL,15,-THCOF,-TRHS/THCOF)
               ENDIF
             ENDIF
           ENDIF
