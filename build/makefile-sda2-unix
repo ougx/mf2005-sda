@@ -16,17 +16,23 @@ VPATH = \
 
 .SUFFIXES: .c .cpp .f .f90 .F90 .fpp .o
 
+
+# HDF on W520
+HDFLIB = -I/usr/include -L/usr/lib /usr/lib/libhdf5hl_fortran.a /usr/lib/libhdf5_hl.a /usr/lib/libhdf5_fortran.a /usr/lib/libhdf5.a -ldl -lm
+
+# HDF on SNR
+#HDFLIB = -I/usr/include -L/usr/lib /usr/lib/libhdf5hl_fortran.a /usr/lib/libhdf5_hl.a /usr/lib/libhdf5_fortran.a /usr/lib/libhdf5.a -L/usr/lib -lz -ldl -lm
+
+
+
 # Define the Fortran compile flags
 F90 = gfortran
-F90FLAGS = -O3 -fbacktrace -ffpe-summary=overflow -I/usr/include -I/usr/lib -lhdf5 -ldl
+F90FLAGS = -O3 -fbacktrace -ffpe-summary=overflow -I/usr/include
 
 # Define the C compile flags
 CC = gcc
 CFLAGS = -O3
 
-# Define the libraries
-SYSLIBS = -lc
-HDFLIB = -I/usr/include -L/usr/lib /usr/lib/libhdf5hl_fortran.a /usr/lib/libhdf5_hl.a /usr/lib/libhdf5_fortran.a /usr/lib/libhdf5.a -ldl -lm
 
 OBJECTS = \
 $(OBJDIR)/utl7.o \
@@ -86,8 +92,9 @@ $(OBJDIR)/r_vector.o \
 $(OBJDIR)/mf2kgmg.o \
 $(OBJDIR)/solvers.o \
 $(OBJDIR)/ccfd.o \
-$(OBJDIR)/sda_utl.o \
-$(OBJDIR)/sda2.o
+$(OBJDIR)/hdf.o \
+$(OBJDIR)/sda2.o \
+$(OBJDIR)/sda_utl.o 
 # Define task functions
 
 # Compile and link the executable
@@ -95,7 +102,7 @@ all: mf2005
 
 # Define the objects that make up mf2005
 mf2005: $(OBJECTS)
-	-$(F90) $(F90FLAGS) -o $(PROGRAM) $(OBJECTS) $(SYSLIBS) -I$(OBJDIR) -J$(OBJDIR) $(HDFLIB)
+	-$(F90) $(F90FLAGS) -o $(PROGRAM) $(OBJECTS) -I$(OBJDIR) -J$(OBJDIR) $(HDFLIB)
 
 $(OBJDIR)/%.o : %.f
 	@mkdir -p $(@D)

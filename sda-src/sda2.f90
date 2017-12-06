@@ -1,7 +1,6 @@
 module SDA
   !use GLOBAL, only                  :   DEFAULT_KIND
-  use HDF5
-  use ISO_C_BINDING
+  use hdf
   logical                           ::  debug = .FALSE.
   integer                           ::  idebug                  !output file number for scenario runs (2D head differebces)
   integer                           ::  IGRID = 1               !fake sub grid number
@@ -77,13 +76,6 @@ module SDA
   integer                              ::  nActive
 
   integer                           ::  iHED =0                 !output file number for scenario runs (2D head differebces)
-  integer(hid_t)                    ::  ihdf5_in                !File identifier for HDF5 input file
-  integer(hid_t)                    ::  ihdf5_out               !File identifier for HDF5 output file
-
-  integer(hid_t)                    ::  sdab_id                 ! HDF handler for compound type
-  integer(hid_t)                    ::  h5t_int                 ! HDF handler for interger type
-  integer(hsize_t)                  ::  g_dims(2)               ! grid dimemsion
-  integer(hsize_t)                  ::  c_dims(2)               ! cb dimemsion
 
 
   character*80                      ::  ScenName                !Scenario Name
@@ -91,9 +83,7 @@ module SDA
 
   integer                           ::  iCBB =  0               !output file number for scenario runs
 
-  character*10                      ::  FORM='BINARY'
-  character*15                      ::  ACCESS='SEQUENTIAL'
-  character*10                      ::  ACTION(2)=(/'READ      ','READWRITE '/)
+  include '../mf-src/openspec.inc'
 
   !cell of head-dependent flow boundary condition
   integer,      allocatable                           ::  cbCOL(:),cbCOL_o(:)                  !col
@@ -103,135 +93,6 @@ module SDA
 
   real,    allocatable                                ::  cbCond(:),cbCond_o(:)                    !conductance
   real,    allocatable                                ::  cbHead(:),cbHead_o(:)                    !boundary head
-
-!  integer,                                            ::  nCBType
-!  integer,      allocatable                           ::  cbiType(:)
-!  character*16, allocatable                           ::  cbTypeList(:)
-
-contains
-  subroutine saveHDFreal(file_id, arr, dsetname, dims)
-    integer(hid_t)    :: file_id
-    integer(hid_t)    :: dtype
-    real              :: arr(*)
-    integer(hsize_t)  :: dims(:)
-    character(len=*)  :: dsetname
-    integer           :: ierr
-    integer(hid_t)    :: dspace_id
-    integer(hid_t)    :: dset_id
-
-    CALL h5tcopy_f(H5T_NATIVE_REAL, dtype, ierr)
-    ! Create the dataspace.
-    CALL h5screate_simple_f(size(dims), dims, dspace_id, ierr)
-    ! Create the dataset with default properties.
-    CALL h5dcreate_f(file_id, trim(dsetname), dtype, dspace_id, dset_id, ierr)
-    ! Write the dataset.
-    CALL h5dwrite_f(dset_id, dtype, arr, dims, ierr)
-    CALL h5dclose_f(dset_id, ierr)
-    CALL h5sclose_f(dspace_id, ierr)
-  end subroutine
-
-  subroutine saveHDFstring(file_id, arr, dsetname, dims, str_size)
-    integer(hid_t)    :: file_id
-    integer(hsize_t)  :: str_size
-    character(len=str_size), target      :: arr(*)
-    integer(hsize_t)  :: dims(:)
-    character(len=*)  :: dsetname
-    integer           :: ierr
-    integer(hid_t)    :: dspace_id
-    integer(hid_t)    :: dset_id
-    integer(hid_t)    :: dtype
-    TYPE(C_PTR)       :: f_ptr
-
-    ! Create string data type
-    CALL h5tcopy_f(H5T_FORTRAN_S1, dtype, ierr)
-    CALL h5tset_size_f(dtype, str_size, ierr)
-
-    ! Create the dataspace.
-    CALL h5screate_simple_f(size(dims), dims, dspace_id, ierr)
-    ! Create the dataset with default properties.
-    CALL h5dcreate_f(file_id, trim(dsetname), dtype, dspace_id, dset_id, ierr)
-    ! Write the dataset.
-    f_ptr = C_LOC(arr(1)(1:1))
-    CALL h5dwrite_f(dset_id, dtype, arr, dims, ierr)
-    CALL h5dclose_f(dset_id, ierr)
-    CALL h5sclose_f(dspace_id, ierr)
-
-  end subroutine
-
-  subroutine saveHDFint(file_id, arr, dsetname, dims, dtype)
-    integer(hid_t)    :: file_id
-    integer(hid_t)    :: dtype
-    integer           :: arr(*)
-    integer(hsize_t)  :: dims(:)
-    character(len=*)  :: dsetname
-    integer           :: ierr
-    integer(hid_t)    :: dspace_id
-    integer(hid_t)    :: dset_id
-
-    ! Create the dataspace.
-    CALL h5screate_simple_f(size(dims), dims, dspace_id, ierr)
-    ! Create the dataset with default properties.
-    CALL h5dcreate_f(file_id, trim(dsetname), dtype, dspace_id, dset_id, ierr)
-    ! Write the dataset.
-    CALL h5dwrite_f(dset_id, dtype, arr, dims, ierr)
-    CALL h5dclose_f(dset_id, ierr)
-    CALL h5sclose_f(dspace_id, ierr)
-  end subroutine
-
-  subroutine readHDFint(file_id, arr, dsetname, dims)
-    integer(hid_t)    :: file_id
-    integer           :: arr(*)
-    character(len=*)  :: dsetname
-    integer(hsize_t)  :: dims(:)
-    !local
-    integer(hid_t)    :: dtype
-    integer           :: ierr
-    integer(hid_t)    :: dset_id
-
-
-    CALL h5dopen_f(file_id, trim(dsetname), dset_id, ierr)
-    CALL h5dget_type_f(dset_id, dtype, ierr)
-    CALL h5dread_f(dset_id, dtype, arr, dims, ierr)
-    CALL h5dclose_f(dset_id, ierr)
-
-  end subroutine
-
-
-  subroutine readHDFreal(file_id, arr, dsetname, dims)
-    integer(hid_t)    :: file_id
-    real              :: arr(*)
-    character(len=*)  :: dsetname
-    integer(hsize_t)  :: dims(:)
-    ! local
-    integer(hid_t)    :: dtype
-    integer           :: ierr
-    integer(hid_t)    :: dset_id
-
-
-    CALL h5dopen_f(file_id, trim(dsetname), dset_id, ierr)
-    CALL h5dget_type_f(dset_id, dtype, ierr)
-    CALL h5dread_f(dset_id, dtype, arr, dims, ierr)
-    CALL h5dclose_f(dset_id, ierr)
-
-  end subroutine
-
-
-  subroutine readHDFstring(file_id, arr, dsetname, dims, str_size)
-    integer(hid_t)    :: file_id
-    integer(hsize_t)  :: str_size
-    character(*)      :: arr(*)
-    integer(hsize_t)  :: dims(:)
-    character(len=*)  :: dsetname
-    integer           :: ierr
-    integer(hid_t)    :: dset_id
-    integer(hid_t)    :: dtype
-
-
-    CALL h5dopen_f(file_id, trim(dsetname), dset_id, ierr)
-    CALL h5dget_type_f(dset_id, dtype, ierr)
-    CALL h5dread_f(dset_id, dtype, arr, dims, ierr)
-    CALL h5dclose_f(dset_id, ierr)
-  end subroutine
 
 end module
 
@@ -251,7 +112,8 @@ subroutine SDA_Ini(iin)
   integer(hid_t)                          ::  strtype
   integer                                 ::  ierr
 
-
+  ! initialize HDF5 (extremely important)
+  call h5open_f(ierr)
 
   ! define hdf datatypes to be used
   call h5tcopy_f(H5T_NATIVE_INTEGER, h5t_int, ierr)
@@ -626,7 +488,7 @@ subroutine SDA_ReadHCOF()
   integer ::  KSTP,KPER
 
   CHARACTER*7      :: txtStepLayer
-
+  real :: rr(NCOL, NROW)
   integer :: K, i
 
   DO K=1,NLAY
@@ -634,8 +496,8 @@ subroutine SDA_ReadHCOF()
     if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), pxIB//txtStepLayer, g_dims)
     if (newCC(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CC(:,:,K), pxCC//txtStepLayer, g_dims)
     if (newCR(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CR(:,:,K), pxCR//txtStepLayer, g_dims)
-    if (newCV(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CV(:,:,K), pxCC//txtStepLayer, g_dims)
-    if (newSC(K, iSTEP) == 1) call readHDFreal(ihdf5_in, SC(:,:,K), pxCC//txtStepLayer, g_dims)
+    if (newCV(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CV(:,:,K), pxCV//txtStepLayer, g_dims)
+    if (newSC(K, iSTEP) == 1) call readHDFreal(ihdf5_in, SC(:,:,K), pxSC//txtStepLayer, g_dims)
   end do
 
   HCOF = -SC / DELT
@@ -672,7 +534,7 @@ subroutine SDA_Run(iin)
     deallocate(SDACR)
     deallocate(SDAHCOF)
     deallocate(SDASC)
-
+    NSEN = -NSEN
   endif
 
 
@@ -717,8 +579,16 @@ subroutine SDA_Run(iin)
 
   ! determine the head-dependent flow terms used in the model
   call SDA_FindCBType()
-
+  
+  call readHDFint(ihdf5_in, newIB, 'newIB', c_dims)
+  call readHDFint(ihdf5_in, newCB, 'newCB', (/int(NSTEP, hsize_t)/))
+  call readHDFint(ihdf5_in, newCC, 'newCC', c_dims)
+  call readHDFint(ihdf5_in, newCR, 'newCR', c_dims)
+  call readHDFint(ihdf5_in, newCV, 'newCV', c_dims)
+  call readHDFint(ihdf5_in, newSC, 'newSC', c_dims)
+  
   ! enter scenario run
+  dHNEW = 0
   do isen = 1, abs(NSEN)
     call SDA_NewScen(iin)
   end do

@@ -1,0 +1,8 @@
+*.mod
+*.o
+*.exe
+*.bat
+*.sh
+*.h5
+*.cbp
+*.layout

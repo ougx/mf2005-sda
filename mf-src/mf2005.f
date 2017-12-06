@@ -602,8 +602,8 @@ C10-----END OF PROGRAM.
 
 
       ! SDA: Start SDA Initialize
-      IF(IUNIT(66)>0) then
-        WRITE(*, *) 'Change NSEN to Positive to run scenario analysis!'
+      IF(IUNIT(66)>0) then        
+        !call SDA_Run(IUNIT(66))
       end if
 
       CALL USTOP(' ')

@@ -77,9 +77,7 @@ module SDA
 
   integer                           ::  iCBB =  0               !output file number for scenario runs
 
-  character*10                      ::  FORM='BINARY'
-  character*15                      ::  ACCESS='SEQUENTIAL'
-  character*10                      ::  ACTION(2)=(/'READ      ','READWRITE '/)
+  include '../mf-src/openspec.inc'
 
   !cell of head-dependent flow boundary condition
   type  ::  SDAB
@@ -488,21 +486,6 @@ subroutine SDA_SaveHCOF(KSTP,KPER)
       !call UBUDSV(KSTP,KPER,TEXT,iSC(KPER),SDASC(:,:,K),NCOL,NROW,1,IOUT)
     endif
 
-    if ((KPER+KSTP) == 2 .or. any(HCOF(:,:,K) /= SDAHCOF(:,:,K))) then
-      newco = 'N'
-      SDAHCOF(:,:,K) = HCOF(:,:,K)
-    else
-      newco = 'O'
-    endif
-    write(iHCOF(KPER)) newco
-    if (newco == 'N') then
-      !       1234567890123456
-      write(TEXT,"(A6,A4,I3,3x)") 'HCOF','LAY',K
-      write(iHCOF(KPER)) HCOF(:,:,K)
-      !call UBUDSV(KSTP,KPER,TEXT,iHCOF(KPER),HCOF(:,:,K),NCOL,NROW,1,IOUT)
-    endif
-
-
   enddo
   !check if anything change, if yes, save, otherwise skip
 
@@ -580,19 +563,13 @@ subroutine SDA_ReadHCOF(KPER,KSTP)
     endif
 
 
-    write(TEXT,"(A6,A4,I3,3x)") 'HCOF','LAY',K
-    read(iHCOF(KPER)) newco
-    if (newco == "N") then
-        !       1234567890123456
-      !call UBUDRD(KSTP,KPER,TEXT,iHCOF(KPER),HCOF(:,:,K),NCOL,NROW,1,IOUT)
-      read(iHCOF(KPER)) HCOF(:,:,K)
-    else
-      if (newco /= "O") call USTOP(TEXT)
-    endif
-
     !call SDA_TSPCoeff
   enddo
 
+  HCOF = -SDASC0 / DELT
+  do k = 1, NCB
+    HCOF(pSDACB(k)%ICOL, pSDACB(k)%IROW, pSDACB(k)%ILAY) = HCOF(pSDACB(k)%ICOL, pSDACB(k)%IROW, pSDACB(k)%ILAY) - pSDACB(k)%CB
+  end do
 
 endsubroutine
 
