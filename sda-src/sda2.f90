@@ -1,100 +1,4 @@
-module SDA
-  !use GLOBAL, only                  :   DEFAULT_KIND
-  use hdf
-  logical                           ::  debug = .FALSE.
-  integer                           ::  idebug                  !output file number for scenario runs (2D head differebces)
-  integer                           ::  IGRID = 1               !fake sub grid number
 
-  doubleprecision                   ::  DTRead                  !Total time used for reading files
-  doubleprecision                   ::  DTSolver                !Total time used to solve equation
-  doubleprecision                   ::  DTStpIni                !Total time used to solve equation
-  doubleprecision                   ::  DTBD                    !Total time used to finalize the scenario run
-  doubleprecision                   ::  DTStpEnd                !Total time used for step calculations
-
-
-  integer                           ::  NSEN = 0                !total number of scenario runs, > 0 no baseline run; < 0 include baseline run
-  integer                           ::  QWEL                    !flag if the well package is activated in the scenario runs, 1 is activated, other is none
-  integer                           ::  QRCH                    !flag if the recharge package is activated in the scenario runs, 1 is activated, other is none
-  integer                           ::  QHED                    !flag for writting head difference, if QHED > 0, write as formatted, QHED < 0, write as unformated, QHED = 0, no write
-  integer                           ::  QCCB                    !flag for writting cell by cell budgets
-
-
-  integer                           ::  mCell                   !number of active cells
-
-
-  integer                           ::  NCBMAX                  !maximum number of boundary
-  integer                           ::  NCB                     !number of boundary each time step
-
-  integer                           ::  iSTEP                   !current time step
-  integer                           ::  NSTEP                   !total number of time steps
-
-
-  integer                           ::  iTypeBC
-  integer                           ::  nTypeBC
-
-
-
-  real,allocatable    ::  SDACR(:,:,:)            !baseline CR
-  real,allocatable    ::  SDACC(:,:,:)            !baseline CC
-  real,allocatable    ::  SDACV(:,:,:)            !baseline CV
-  real,allocatable       ::  SDAHCOF(:,:,:)          !baseline HCOF
-  !real,allocatable,dimension(:,:,:) ::  SDARHS                 !baseline RHS
-  real,allocatable,dimension(:,:,:) ::  SC                      !baseline Storage Capacity
-  real,allocatable,dimension(:,:,:) ::  SDASC                   !Storage Capacity
-  integer,allocatable,dimension(:,:,:) ::  SDAIBD               !baseline IBOUND
-
-
-
-
-  integer*1                         ::  CBINDX(100)             !the order of CB in outputs
-  integer                           ::  CBNTOT(100)             !total number of CB during the simulation
-  character(len=16)                 ::  CBTYPE(100)             !CB name
-
-  doubleprecision                   ::  CBVBVL(4,100)           !In&Out, Rate and Cumulative
-
-
-  integer                           ::  NBZONEMax               !maximum number of boundary ZONEs for all scenarios
-  integer                           ::  NBZONE                  !number of boundary ZONEs of a scenario run
-  integer,allocatable               ::  BZONE(:,:,:)            !boundary ZONE, defined at NewScen
-  doubleprecision,allocatable       ::  RBZONE(:,:,:)           !flow rate of each zone, Calculated each NewStp
-
-  ! prefix used to construct dataset name in HDF5, full name will be 'prefix + 0000 + 000'
-  character*2, parameter               ::  pxIB = 'IB'              !hdf5 name prefix for iBOUND
-  character*2, parameter               ::  pxCR = 'CR'                  !hdf5 name prefix for baseline CR
-  character*2, parameter               ::  pxCC = 'CC'                 !hdf5 name prefix for baseline CC
-  character*2, parameter               ::  pxCV = 'CV'                !hdf5 name prefix for baseline CV
-  character*2, parameter               ::  pxSC = 'SC'               !hdf5 name prefix for baseline SC
-  character*2, parameter               ::  pxCB = 'CB'               !hdf5 name prefix for baseline boundary condutance
-  character*2, parameter               ::  pxHC = 'HC'               !hdf5 name prefix for baseline boundary condutance
-
-
-  integer, parameter                   ::  nMaxStep = 9999         !maximum number of boundary
-  integer,allocatable, dimension(:,:)  ::  newCR, newCC, newCV, newHC, newSC, newIB  ! ilayer, istep
-  integer,allocatable, dimension(:)    ::  newCB ! istep
-
-  integer,allocatable, dimension(:)    ::  actLay, actRow, actCol ! active layer row column
-  integer                              ::  nActive
-
-  integer                           ::  iHED =0                 !output file number for scenario runs (2D head differebces)
-
-
-  character*80                      ::  ScenName                !Scenario Name
-  integer                           ::  iSen                    !index of scenario run
-
-  integer                           ::  iCBB =  0               !output file number for scenario runs
-
-  include '../mf-src/openspec.inc'
-
-  !cell of head-dependent flow boundary condition
-  integer,      allocatable                           ::  cbCOL(:),cbCOL_o(:)                  !col
-  integer,      allocatable                           ::  cbROW(:),cbROW_o(:)                  !row
-  integer,      allocatable                           ::  cbLAY(:),cbLAY_o(:)                  !layer
-  integer,      allocatable                           ::  cbTyp(:),cbTyp_o(:)                   !boundary text
-
-  real,    allocatable                                ::  cbCond(:),cbCond_o(:)                    !conductance
-  real,    allocatable                                ::  cbHead(:),cbHead_o(:)                    !boundary head
-
-end module
 
 subroutine SDA_Ini(iin)
   !initialize
@@ -148,13 +52,6 @@ subroutine SDA_Ini(iin)
   !write(IOUT,*) " READING UNIT NUMBERS FOR SDA ... "
 
 
-  CALL URDCOM(iin,IOUT,sline)
-  if (len_trim(sline)>1) then
-    CALL h5fcreate_f(trim(sline), H5F_ACC_TRUNC_F, ihdf5_out, iERR)
-    if (iERR /= 0) call USTOP('Program cannot create HDF5 file: '//trim(sline))
-  else
-    ihdf5_out = 0
-  end if
   if (debug) open(newunit=idebug, file="debug.txt")
 
 
@@ -190,6 +87,8 @@ subroutine SDA_Ini(iin)
 
 
   allocate(SC(NCOL,NROW,NLAY))
+  allocate(dHNEW(NCOL,NROW,NLAY))
+  allocate(dHOLD(NCOL,NROW,NLAY))
 
   if (NSEN < 0) then
     iSTEP = 0
@@ -198,6 +97,7 @@ subroutine SDA_Ini(iin)
     allocate(SDACC(NCOL,NROW,NLAY))
     allocate(SDACR(NCOL,NROW,NLAY))
     allocate(SDASC(NCOL,NROW,NLAY))
+    allocate(HITER(NCOL,NROW,NLAY))
 
     SDAIBD = 0
     SDASC = 0.
@@ -410,15 +310,16 @@ END
 subroutine SDA_SaveHCOF(KSTP,KPER)
   !save flow coefficients
   use sda
-  use GLOBAL,only  :   CR,CC,CV,HCOF,IOUT,IBOUND,RHS,NCOL,NROW,NLAY
+  use GLOBAL,only  :   CR,CC,CV,HCOF,IOUT,IBOUND,RHS,NCOL,NROW,NLAY,HOLD
 
   CHARACTER*16     :: TEXT
   CHARACTER*7      :: txtStepLayer
   integer          :: K,KKPER,KKSTP,KSTP,KPER
-
+  real             :: htemp(NCOL, NROW)
 
   !       1234567890123456
   !KKPER = min(1,KPER)
+  
   DO K=1,NLAY
     write(txtStepLayer, '(I0.4, I0.3)') iSTEP, K
 
@@ -430,62 +331,19 @@ subroutine SDA_SaveHCOF(KSTP,KPER)
       newIB(K, iSTEP) = 0
     endif
 
-
-    if (iSTEP == 1 .or. any(CR(:,:,K) /= SDACR(:,:,K))) then
-      newCR(K, iSTEP) = 1
-      SDACR(:,:,K) = CR(:,:,K)
-      call saveHDFreal(ihdf5_in, SDACR(:,:,K), pxCR//txtStepLayer, g_dims)
-    else
-      newCR(K, iSTEP) = 0
-    endif
-
-
-    if (iSTEP == 1 .or. any(CV(:,:,K) /= SDACV(:,:,K))) then
-      newCV(K, iSTEP) = 1
-      SDACV(:,:,K) = CV(:,:,K)
-      call saveHDFreal(ihdf5_in, SDACV(:,:,K), pxCV//txtStepLayer, g_dims)
-    else
-      newCV(K, iSTEP) = 0
-    endif
-
-
-    if (iSTEP == 1 .or. any(CC(:,:,K) /= SDACC(:,:,K))) then
-      newCC(K, iSTEP) = 1
-      SDACC(:,:,K) = CC(:,:,K)
-      call saveHDFreal(ihdf5_in, SDACC(:,:,K), pxCC//txtStepLayer, g_dims)
-    else
-      newCC(K, iSTEP) = 0
-    endif
-
-    if (iSTEP == 1 .or. any(SDASC(:,:,K) /= SC(:,:,K))) then
-      newSC(K, iSTEP) = 1
-      SDASC(:,:,K) = SC(:,:,K)
-      call saveHDFreal(ihdf5_in, SDASC(:,:,K), pxSC//txtStepLayer, g_dims)
-    else
-      newSC(K, iSTEP) = 0
-    endif
-
-    ! HCOF does not need to be saved as it can be reconstructed from Conductance and SC
-!    if (iSTEP == 1 .or. any(SDAHCOF(:,:,K) /= HCOF(:,:,K))) then
-!      newHC(K, iSTEP) = 1
-!      SDAHCOF(:,:,K) = HCOF(:,:,K)
-!      call saveHDFreal(ihdf5_in, SDAHCOF(:,:,K), pxHC//txtStepLayer, (/NCOL, NROW/))
-!    else
-!      newHC(K, iSTEP) = 0
-!    endif
+    htemp = HITER(:,:,K)
+    call saveHDFdbl(ihdf5_in, HITER(:,:,K), 'HI'//txtStepLayer, g_dims)
+    call saveHDFreal(ihdf5_in, HOLD(:,:,K), 'HO'//txtStepLayer, g_dims)
 
   enddo
-  !check if anything change, if yes, save, otherwise skip
-
-  !if (debug) write(idebug, "(10(1PE15.7))") RHS
 endsubroutine
 
 subroutine SDA_ReadHCOF()
   !read flow coefficients
   use sda
-  use GLOBAL,only                         :   CR,CC,CV,HCOF,IOUT,IBOUND,NCOL,NROW,NLAY
+  use GLOBAL,only                         :   CR,CC,CV,HCOF,IOUT,IBOUND,NCOL,NROW,NLAY, HNEW, HOLD
   use GWFBASMODULE,only                   :   DELT
-  integer ::  KSTP,KPER
+  real             :: htemp(NCOL, NROW)
 
   CHARACTER*7      :: txtStepLayer
   real :: rr(NCOL, NROW)
@@ -494,16 +352,11 @@ subroutine SDA_ReadHCOF()
   DO K=1,NLAY
     write(txtStepLayer, '(I0.4, I0.3)') iSTEP, K
     if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), pxIB//txtStepLayer, g_dims)
-    if (newCC(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CC(:,:,K), pxCC//txtStepLayer, g_dims)
-    if (newCR(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CR(:,:,K), pxCR//txtStepLayer, g_dims)
-    if (newCV(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CV(:,:,K), pxCV//txtStepLayer, g_dims)
-    if (newSC(K, iSTEP) == 1) call readHDFreal(ihdf5_in, SC(:,:,K), pxSC//txtStepLayer, g_dims)
+    call readHDFdbl(ihdf5_in,  HNEW(:,:,K), 'HI'//txtStepLayer, g_dims)
+    call readHDFreal(ihdf5_in, HOLD(:,:,K), 'HO'//txtStepLayer, g_dims)
   end do
-
-  HCOF = -SC / DELT
-  do i = 1, NCB
-    HCOF(cbCOL(i), cbROW(i), cbLAY(i)) = HCOF(cbCOL(i), cbROW(i), cbLAY(i)) - cbCond(i)
-  end do
+  
+  
 endsubroutine
 
 
@@ -588,11 +441,10 @@ subroutine SDA_Run(iin)
   call readHDFint(ihdf5_in, newSC, 'newSC', c_dims)
   
   ! enter scenario run
-  dHNEW = 0
   do isen = 1, abs(NSEN)
     call SDA_NewScen(iin)
   end do
-
+  call h5fclose_f(ihdf5_in, iin)
   WRITE(*,*) ' Normal termination of scenario analysis'
 endsubroutine
 
@@ -615,17 +467,19 @@ subroutine SDA_NewScen(iin)
   character*300                     ::  strline               !mass balance error
   INTEGER                           ::  IBDT(8,10)
   logical                           ::  sol
+  integer                           ::  ierr
 
 
   DTRead = 0.d0
   DTStpEnd = 0.d0
   DTSolver = 0.d0
+  dHOLD = 0
   CALL DATE_AND_TIME(VALUES=IBDT(:,1))
   !scenario name
   read(iin, *) ScenName
   ScenName = trim(ScenName)
 
-
+  ! list file name
   read(iin, "(A)") fileName
   !close the output files for the previous scenario run
   close(IOUT)
@@ -730,11 +584,6 @@ subroutine SDA_NewScen(iin)
 
 
   if (N/=1) call USTOP('Something wrong with Solver')
-
-
-
-
-
   !zone file
   write(IOUT, "(/,A)") " READING ZONE FILE ... "
   read(iin, "(A)") fileName
@@ -747,14 +596,15 @@ subroutine SDA_NewScen(iin)
   !accretional input flow
   read(iin, *) QHED, QWEL, QRCH
   !write(IOUT, "(/,A,1PE10.2,A)") "  FLOW SAVE THRESHOLD: ", QTor, "; FLOWS LOWER THAN THIS VALUE WILL NOT BE SAVED TO OUTPUT FILE."
-  if (QHED /= 0) then
-    read(iin, "(A)") fileName
-    if (QHED>0) then
-      LBDDSV = 1
-      CDDNFM = '(10(1X1PE13.5))'
-      open(newunit = iHED, file = fileName)
+  if (QHED > 0) then
+    
+    CALL URDCOM(iin,IOUT,fileName)
+    ihdf5_out = 0
+    if (len_trim(fileName)>1) then
+      CALL h5fcreate_f(trim(fileName), H5F_ACC_TRUNC_F, ihdf5_out, iERR)
+      if (iERR /= 0) call USTOP('Program cannot create HDF5 file: '//trim(fileName))
     else
-      OPEN(newunit=iHED,FILE=fileName,FORM=FORM,ACCESS=ACCESS)
+      call USTOP('File of head change is not specified for Scenario '//trim(ScenName))
     end if
 
   end if
@@ -811,7 +661,7 @@ subroutine SDA_NewScen(iin)
   enddo
 
   CALL DATE_AND_TIME(VALUES=IBDT(:,3))
-
+  if(QHED >0)         call h5fclose_f(ihdf5_out, ierr)
   IF(QWEL >0)         CALL GWF2WEL7DA(IGRID)
   IF(QRCH >0)         CALL GWF2RCH7DA(IGRID)
   IF(IUNIT(9).GT.0)   CALL SIP7DA(IGRID)
@@ -879,6 +729,9 @@ subroutine SDA_NewTSP(KSTP, KPER)
   real                              ::  BUDPERC               !mass balance error
   integer                           ::  ITT(8,10)
   real                              ::  dt
+  character(len=4)                  ::  sStep
+  
+  write(sStep, '(I0.4)') iSTEP
 
   call date_and_time(values = ITT(:,1))
 
@@ -887,25 +740,37 @@ subroutine SDA_NewTSP(KSTP, KPER)
   !del time
   CALL GWF2BAS7AD(KKPER,KKSTP,IGRID)
 
-
   call SDA_ReadCB()
   !read IBOUND, CV,CC,CR,HCOF
   call SDA_ReadHCOF()
-
-
   call date_and_time(values = ITT(:,2))
+
+  HCOF = 0.
+  IF(IUNIT(1).GT.0)  CALL GWF2BCF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
+  IF(IUNIT(23).GT.0) CALL GWF2LPF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
+  SC = -HCOF * DELT
+  RHS = dHOLD * HCOF
+  do i = 1, NCB
+    HCOF(cbCOL(i), cbROW(i), cbLAY(i)) = HCOF(cbCOL(i), cbROW(i), cbLAY(i)) - cbCond(i)
+  end do
+  
   !if (debug) go to 101
   !read addtional well or recharge
-  RHS = - HOLD * SC / DELT
-
   if (QWEL > 0) call GWF2WEL7FM(IGRID)
   if (QRCH > 0) call GWF2RCH7FM(IGRID)
+!  write(IOUT, *)  'thisCC'; write(IOUT, '(504F10.1)')  CC
+!  write(IOUT, *)  'thisCV'; write(IOUT, '(504F10.1)')  CV
+!  write(IOUT, *)  'thisCR'; write(IOUT, '(504F10.1)')  CR
+!  write(IOUT, *)  'thisSC'; write(IOUT, '(504F10.1)')  SC
+!  write(IOUT, *)  'thisRHS'; write(IOUT, '(504F10.1)')  RHS
+!  write(IOUT, *)  'thisHCOF'; write(IOUT, '(504F10.1)')  HCOF
 
   !if (debug) write(idebug, "(10(1PE15.7))") RHS
 
 
-  !initial guess
-  !HNEW = 0.0d0
+  !initial guess, 
+  ! for convenience,  HNEW represents head change to be used in constant head flow and other budget calculation 
+  HNEW = dHOLD
 
   !7C2----ITERATIVELY FORMULATE AND SOLVE THE FLOW EQUATIONS.
   DO KITER = 1, MXITER
@@ -974,15 +839,10 @@ subroutine SDA_NewTSP(KSTP, KPER)
 
   !outputs
   if (QHED > 0) then
-    do k=1, NLAY
-      kk=k
-      call ULASV2(real(HNEW(:,:,K)),' HEAD DIFFERENCE',KSTP,KPER,PERTIM,TOTIM,NCOL,NROW,KK,iHED,CDDNFM,LBDDSV,IBOUND(:,:,K))
-    enddo
-  elseif (QHED < 0) then
-    do k=1, NLAY
-      kk=k
-      call ULASAV(real(HNEW(:,:,K)),' HEAD DIFFERENCE',KSTP,KPER,PERTIM,TOTIM,NCOL,NROW,KK,iHED)
-    enddo
+    call saveHDFreal(ihdf5_out, real(HNEW),'dH'//sStep, (/int(NCOL, hsize_t),int(NROW, hsize_t),int(NLAY, hsize_t)/))
+    call h5fflush_f(ihdf5_out, H5F_SCOPE_GLOBAL_F, IER)
+    !write(IOUT, *)  'thisDH'; write(IOUT, '(504E10.3)')  HNEW
+    
   endif
 
 
@@ -998,6 +858,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
   call TIMEDIFF(ITT(:,3),ITT(:,4),dt)
   DTStpEnd = DTStpEnd + dble(dt)
 
+  dHOLD=HNEW
 endsubroutine
 
 
@@ -1035,7 +896,7 @@ subroutine SDA_BD(KSTP,KPER)
     DO IC=1,NCOL
       DO IL=1,NLAY
         if (IBOUND(IC,IR,IL) > 0) then
-          Q = SC(IC,IR,IL)*(HOLD(IC,IR,IL)-HNEW(IC,IR,IL)) / DELT
+          Q = SC(IC,IR,IL)*(dHOLD(IC,IR,IL)-HNEW(IC,IR,IL)) / DELT
           call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
         endif
       enddo  !IL=1,NLAY

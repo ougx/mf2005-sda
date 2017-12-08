@@ -433,7 +433,8 @@ C     ******************************************************************
 C
 C        SPECIFICATIONS:
 C     ------------------------------------------------------------------
-      USE GLOBAL,ONLY:HCOF,RHS
+      USE GLOBAL,ONLY:HCOF,RHS, HNEW
+      use SDA,only: HITER, NSEN
 C     ------------------------------------------------------------------
       CALL SGWF2BAS7PNT(IGRID)
 C
@@ -441,6 +442,8 @@ C1------FOR EACH CELL INITIALIZE HCOF AND RHS ACCUMULATORS.
       ZERO=0.
       HCOF=ZERO
       RHS=ZERO
+      ! record the head of last iteration
+      if (NSEN<0) HITER = HNEW
 C
 C2------RETURN
       RETURN

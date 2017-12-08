@@ -18,10 +18,10 @@ VPATH = \
 
 
 # HDF on W520
-HDFLIB = -I/usr/include -L/usr/lib /usr/lib/libhdf5hl_fortran.a /usr/lib/libhdf5_hl.a /usr/lib/libhdf5_fortran.a /usr/lib/libhdf5.a -ldl -lm
+#HDFLIB = -I/usr/include -L/usr/lib /usr/lib/libhdf5hl_fortran.a /usr/lib/libhdf5_hl.a /usr/lib/libhdf5_fortran.a /usr/lib/libhdf5.a -ldl -lm
 
 # HDF on SNR
-#HDFLIB = -I/usr/include -L/usr/lib /usr/lib/libhdf5hl_fortran.a /usr/lib/libhdf5_hl.a /usr/lib/libhdf5_fortran.a /usr/lib/libhdf5.a -L/usr/lib -lz -ldl -lm
+HDFLIB = -I/usr/include -L/usr/lib /usr/lib/libhdf5hl_fortran.a /usr/lib/libhdf5_hl.a /usr/lib/libhdf5_fortran.a /usr/lib/libhdf5.a -L/usr/lib -lz -ldl -lm
 
 
 
@@ -35,6 +35,7 @@ CFLAGS = -O3
 
 
 OBJECTS = \
+$(OBJDIR)/hdf.o \
 $(OBJDIR)/utl7.o \
 $(OBJDIR)/gwfsfrmodule.o \
 $(OBJDIR)/gwf2bas7.o \
@@ -92,7 +93,6 @@ $(OBJDIR)/r_vector.o \
 $(OBJDIR)/mf2kgmg.o \
 $(OBJDIR)/solvers.o \
 $(OBJDIR)/ccfd.o \
-$(OBJDIR)/hdf.o \
 $(OBJDIR)/sda2.o \
 $(OBJDIR)/sda_utl.o 
 # Define task functions
