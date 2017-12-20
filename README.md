@@ -7,16 +7,15 @@ All variables are free format.
 
 ```
 Dataset 1:  NSEN NCBMAX
-Dataset 2a: FileCof
-Dataset 2b: FileOut
+Dataset 2:  FileCof
 Dataset 3a: ScenName
 Dataset 3b: ListFile
 Dataset 3c: SFtype SFname
 Dataset 3d: ZONFile
-Dataset 3e: IWEL, IRCH, IHED
-Dataset 3f: [WelFile]
-Dataset 3g: [RCHfile]
-Dataset 3h: [HedFile]
+Dataset 3e: IHED, IWEL, IRCH
+Dataset 3f: [HedFile]
+Dataset 3g: [WelFile]
+Dataset 3h: [RCHfile]
 ```
 
 ##### Dataset 1 #####
@@ -33,8 +32,6 @@ If `NSEN = 0`, SDA is inactivated.
 
 1. `FileCof` --- HDF5 File name to store baseline flow coefficients.
 
-2. `FileOut` --- HDF5 File name to store results of scenario runs. 
-If this is a blank line, it will write to indivdual CSV2 files named by `ScenName`.
 
 ##### Dataset 3 #####
 
@@ -50,23 +47,23 @@ Repeat `NSEN` times of Dataset 3 as each set for one scenario
 
 5. `ZONFile` --- Zone file name for flow response calculation. The zone file format follows the Zone Budget specification.
 
-6. `IWEL` --- An integer value used as a flag for well simulation in the scenario run. 
+6. `IHED` --- An integer value used as a flag for writing head changes. 
+If `IHED > 0`, head changes will be written to the HDF5 file. 
+If `IHED <= 0`, head changes will not be written to disk.
+
+7. `IWEL` --- An integer value used as a flag for well simulation in the scenario run. 
 If `IWEL > 0`, the well package is activated in the scenario run. 
 A **WEL** file will be needed. The format of the well file follows MODFLOW specification. 
 Please note that pumping rate used for the well package is the accretion flow compared to the baseline condition.
 
-7. `IRCH` --- An integer value used as a flag for recharge simulation in the scenario run. 
+8. `IRCH` --- An integer value used as a flag for recharge simulation in the scenario run. 
 If `IRCH > 0`, the recharge package is activated in the scenario run. 
 A **RCH** file will be needed. The format of the recharge file follows MODFLOW specification. 
 Please note that recharge rate used for the recharge package is the accretion flow compared to the baseline condition.
 
-8. `IHED` --- An integer value used as a flag for writing head changes. 
-If `IHED < 0`, head changes will be written to the HDF5 file. 
-If `IHED > 0`, head changes will be written to a formatted file with the format specification ``(10(1X1PE13.5))". 
-If `IHED = 0`, head changes will not be written to disk.
+9. `HedFile` --- File name for writing head changes. It only reads when `IHED > 0`.
 
-9. `WelFile` --- Input file name for the well package. It only reads when `IWEL > 0`.
+10. `WelFile` --- Input file name for the well package. It only reads when `IWEL > 0`.
 
-10. `RCHfile` --- Input file name for the recharge package. It only reads when `IRCH > 0`.
+11. `RCHfile` --- Input file name for the recharge package. It only reads when `IRCH > 0`.
 
-11. `HedFile` --- File name for writing head changes. It only reads when `IHED > 0`.
