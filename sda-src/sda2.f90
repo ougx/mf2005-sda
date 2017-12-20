@@ -623,7 +623,7 @@ subroutine SDA_NewScen(iin)
 
   if (QWEL > 0) then
     if (IUNIT(2) == 0) then
-      call USTOP('THE WEL PACKAGE MUST BE WITH A FILE UNIT NUMBER IN THE NAME FILE')
+      call USTOP('THE WEL PACKAGE MUST BE ALSO ACTIVATED IN THE BASELINE RUN')
     endif
     read(iin, "(A)") fileName
     close(IUNIT(2))
@@ -632,7 +632,7 @@ subroutine SDA_NewScen(iin)
   endif
   if (QRCH > 0) then
     if (IUNIT(8) == 0) then
-      call USTOP('THE RCH PACKAGE MUST BE WITH A FILE UNIT NUMBER IN THE NAME FILE')
+      call USTOP('THE RCH PACKAGE MUST BE ALSO ACTIVATED IN THE BASELINE RUN')
     endif
     read(iin, "(A)") fileName
     close(IUNIT(8))

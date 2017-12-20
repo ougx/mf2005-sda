@@ -604,7 +604,7 @@ C10-----END OF PROGRAM.
       
       ! SDA: Start SDA Initialize
       IF(IUNIT(66)>0) then   
-        print*, 'Change NSEN to positive to start scenario mode'
+        print '(//A)',' Change NSEN to positive to start scenario mode'
         !call SDA_Run(IUNIT(66))
       end if
 
