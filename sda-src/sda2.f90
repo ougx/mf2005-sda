@@ -87,8 +87,10 @@ subroutine SDA_Ini(iin)
 
 
   allocate(SC(NCOL,NROW,NLAY))
-  allocate(dHNEW(NCOL,NROW,NLAY))
-  allocate(dHOLD(NCOL,NROW,NLAY))
+  !allocate(dHNEW(NCOL,NROW,NLAY))
+  allocate(HDIF(NCOL,NROW,NLAY))
+  allocate(cHDIF(NCOL,NROW,NLAY))
+  allocate(ADIF(NCOL,NROW,NLAY))
 
   if (NSEN < 0) then
     iSTEP = 0
@@ -367,7 +369,7 @@ subroutine SDA_Run(iin)
   use sda
   use GLOBAL
   use GWFBASMODULE
-
+  USE PARAMMODULE
   implicit none
 
   integer                                 ::  iin               !input file number of SDA main file
@@ -375,18 +377,21 @@ subroutine SDA_Run(iin)
   character*400                           ::  line              !layer index
 
 
-  WRITE(*,*) ' Entering scenario analysis mode'
+  WRITE(*,'(//A)') ' Entering scenario analysis mode'
 
 
   if (NSEN<0) then
 
     ! release the array from baseline run
-    deallocate(SDAIBD)
-    deallocate(SDACV)
-    deallocate(SDACC)
-    deallocate(SDACR)
-    deallocate(SDAHCOF)
-    deallocate(SDASC)
+    !WRITE(*,*) ' release the array from baseline run'
+    !deallocate(SDAIBD)
+    !deallocate(SDACV)
+    !deallocate(SDACC)
+    !deallocate(SDACR)
+    !deallocate(SDAHCOF)
+    !deallocate(SDASC)
+  
+    ! change the value of NSEN
     NSEN = -NSEN
   endif
 
@@ -408,6 +413,7 @@ subroutine SDA_Run(iin)
 
 !  ConstantCC = .false.
 !  ConstantSC = .false.
+  print*,' load GWF package'
   IF(IUNIT(1).GT.0) then
     rewind(IUNIT(1))
     call GWF2BCF7AR(IUNIT(1),0,IGRID)
@@ -431,8 +437,10 @@ subroutine SDA_Run(iin)
 
 
   ! determine the head-dependent flow terms used in the model
+  print*,' populate head-dependent boundary types'
   call SDA_FindCBType()
   
+  print*,' read data flags'
   call readHDFint(ihdf5_in, newIB, 'newIB', c_dims)
   call readHDFint(ihdf5_in, newCB, 'newCB', (/int(NSTEP, hsize_t)/))
   call readHDFint(ihdf5_in, newCC, 'newCC', c_dims)
@@ -473,7 +481,8 @@ subroutine SDA_NewScen(iin)
   DTRead = 0.d0
   DTStpEnd = 0.d0
   DTSolver = 0.d0
-  dHOLD = 0
+  HDIF = 0
+  cHDIF = 0
   CALL DATE_AND_TIME(VALUES=IBDT(:,1))
   !scenario name
   read(iin, *) ScenName
@@ -746,10 +755,13 @@ subroutine SDA_NewTSP(KSTP, KPER)
   call date_and_time(values = ITT(:,2))
 
   HCOF = 0.
+  !HNEW = HNEW + cHDIF
   IF(IUNIT(1).GT.0)  CALL GWF2BCF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
   IF(IUNIT(23).GT.0) CALL GWF2LPF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
   SC = -HCOF * DELT
-  RHS = dHOLD * HCOF
+  RHS = HDIF * HCOF
+  ADIF=0.
+  
   do i = 1, NCB
     HCOF(cbCOL(i), cbROW(i), cbLAY(i)) = HCOF(cbCOL(i), cbROW(i), cbLAY(i)) - cbCond(i)
   end do
@@ -770,7 +782,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
 
   !initial guess, 
   ! for convenience,  HNEW represents head change to be used in constant head flow and other budget calculation 
-  HNEW = dHOLD
+  HNEW = HDIF
 
   !7C2----ITERATIVELY FORMULATE AND SOLVE THE FLOW EQUATIONS.
   DO KITER = 1, MXITER
@@ -858,7 +870,8 @@ subroutine SDA_NewTSP(KSTP, KPER)
   call TIMEDIFF(ITT(:,3),ITT(:,4),dt)
   DTStpEnd = DTStpEnd + dble(dt)
 
-  dHOLD=HNEW
+  HDIF=HNEW
+  cHDIF = cHDIF + HNEW
 endsubroutine
 
 
@@ -896,7 +909,7 @@ subroutine SDA_BD(KSTP,KPER)
     DO IC=1,NCOL
       DO IL=1,NLAY
         if (IBOUND(IC,IR,IL) > 0) then
-          Q = SC(IC,IR,IL)*(dHOLD(IC,IR,IL)-HNEW(IC,IR,IL)) / DELT
+          Q = SC(IC,IR,IL)*(HDIF(IC,IR,IL)-HNEW(IC,IR,IL)) / DELT
           call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
         endif
       enddo  !IL=1,NLAY

@@ -218,17 +218,15 @@ module SDA
   integer                           ::  nTypeBC
 
 
-
-  real,allocatable    ::  SDACR(:,:,:)            !baseline CR
-  real,allocatable    ::  SDACC(:,:,:)            !baseline CC
-  real,allocatable    ::  SDACV(:,:,:)            !baseline CV
-  real,allocatable       ::  SDAHCOF(:,:,:)          !baseline HCOF
-  !real,allocatable,dimension(:,:,:) ::  SDARHS                 !baseline RHS
+  ! baseline coefficients
+  real,allocatable,dimension(:,:,:) ::  SDACR(:,:,:)            !baseline CR
+  real,allocatable,dimension(:,:,:) ::  SDACC(:,:,:)            !baseline CC
+  real,allocatable,dimension(:,:,:) ::  SDACV(:,:,:)            !baseline CV
+  real,allocatable,dimension(:,:,:) ::  SDAHCOF(:,:,:)          !baseline HCOF
   real,allocatable,dimension(:,:,:) ::  SC                      !baseline Storage Capacity
+  ! temporory coefficients
   real,allocatable,dimension(:,:,:) ::  SDASC                   !Storage Capacity
   integer,allocatable,dimension(:,:,:) ::  SDAIBD               !baseline IBOUND
-
-
 
 
   integer*1                         ::  CBINDX(100)             !the order of CB in outputs
@@ -280,6 +278,8 @@ module SDA
   real,    allocatable                                ::  cbHead(:),cbHead_o(:)                    !boundary head
 
   !double precision, allocatable                ::  dHNEW(:,:,:) !
-  double precision, allocatable                ::  dHOLD(:,:,:) !
-  double precision, allocatable                ::  HITER(:,:,:) !
+  real            , allocatable                ::  ADIF(:,:,:) ! delta A
+  double precision, allocatable                ::  HDIF(:,:,:) ! head change
+  double precision, allocatable                ::  HITER(:,:,:) ! head of the second last iteration of the solver
+  double precision, allocatable                ::  cHDIF(:,:,:) ! cumulative head changes
 end module

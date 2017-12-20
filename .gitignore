@@ -1,9 +1,13 @@
 *.mod
 *.o
-*.exe
+*.obj
 *.bat
 *.sh
 *.h5
 *.cbp
 *.layout
 sda-src/hdf_test.f90
+*genmod.f90
+*.tlog
+Debug/BuildLog.htm
+*.manifest

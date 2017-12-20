@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VisualStudioProject ProjectCreator="Intel Fortran" Keyword="Console Application" Version="11.0" ProjectIdGuid="{FF410318-8829-432E-B42F-054CB6CD492C}">
+	<Platforms>
+		<Platform Name="Win32"/>
+		<Platform Name="x64"/></Platforms>
+	<Configurations>
+		<Configuration Name="Debug|Win32">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" DebugInformationFormat="debugEnabled" Optimization="optimizeDisabled" AdditionalIncludeDirectories="D:\Workspace\hdf5-examples.tar\hdf5-1.8.20bin\bin\static\$(ConfigurationName)" WarnInterfaces="true" Traceback="true" BoundsCheck="true" StackFrameCheck="true" RuntimeLibrary="rtMultiThreadedDebug"/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" GenerateDebugInformation="true" SubSystem="subSystemConsole"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration>
+		<Configuration Name="Release|Win32">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" AdditionalIncludeDirectories="D:\Workspace\hdf5-examples.tar\hdf5-1.8.20bin\bin\static\$(ConfigurationName);D:\Workspace\hdf5-examples.tar\hdf5-1.8.20bin\bin\$(ConfigurationName) " RuntimeLibrary="rtMultiThreadedDLL"/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" SubSystem="subSystemConsole"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration>
+		<Configuration Name="Debug|x64">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" DebugInformationFormat="debugEnabled" Optimization="optimizeDisabled" AdditionalIncludeDirectories="D:\Workspace\hdf5-examples.tar\hdf5-1.8.20bin\bin\static\$(ConfigurationName)" WarnInterfaces="true" Traceback="true" BoundsCheck="true" StackFrameCheck="true" RuntimeLibrary="rtMultiThreadedDebug"/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" GenerateDebugInformation="true" SubSystem="subSystemConsole"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true" TargetEnvironment="midlTargetAMD64"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration>
+		<Configuration Name="Release|x64">
+				<Tool Name="VFFortranCompilerTool" SuppressStartupBanner="true" AdditionalIncludeDirectories="D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\static\$(ConfigurationName);D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\$(ConfigurationName) "/>
+				<Tool Name="VFLinkerTool" LinkIncremental="linkIncrementalNo" SuppressStartupBanner="true" AdditionalLibraryDirectories="D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\static\$(ConfigurationName);D:\Workspace\hdf5-examples.tar\hdf5-1.8.20vs\bin\$(ConfigurationName) " SubSystem="subSystemConsole" AdditionalDependencies=" user32.lib libhdf5_fortran.lib libhdf5_f90cstub.lib libhdf5.lib &quot;C:\Program Files\HDF_Group\HDF5\1.8.20\lib\libzlib.lib&quot; &quot;C:\Program Files\HDF_Group\HDF5\1.8.20\lib\libszip.lib&quot;"/>
+				<Tool Name="VFResourceCompilerTool"/>
+				<Tool Name="VFMidlTool" SuppressStartupBanner="true" TargetEnvironment="midlTargetAMD64"/>
+				<Tool Name="VFCustomBuildTool"/>
+				<Tool Name="VFPreLinkEventTool"/>
+				<Tool Name="VFPreBuildEventTool"/>
+				<Tool Name="VFPostBuildEventTool"/>
+				<Tool Name="VFManifestTool" SuppressStartupBanner="true"/></Configuration></Configurations>
+	<Files>
+		<Filter Name="Header Files" Filter="fi;fd"/>
+		<Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"/>
+		<Filter Name="Source Files" Filter="f90;for;f;fpp;ftn;def;odl;idl">
+		<File RelativePath=".\mf-src\de47.f"/>
+		<File RelativePath=".\mf-src\gmg7.f"/>
+		<File RelativePath=".\mf-src\gmg7_c_interface.f90"/>
+		<File RelativePath=".\mf-src\gwf2bas7.f"/>
+		<File RelativePath=".\mf-src\gwf2bcf7.f"/>
+		<File RelativePath=".\mf-src\gwf2chd7.f"/>
+		<File RelativePath=".\mf-src\gwf2drn7.f"/>
+		<File RelativePath=".\mf-src\gwf2drt7.f"/>
+		<File RelativePath=".\mf-src\gwf2ets7.f"/>
+		<File RelativePath=".\mf-src\gwf2evt7.f"/>
+		<File RelativePath=".\mf-src\gwf2fhb7.f"/>
+		<File RelativePath=".\mf-src\gwf2gag7.f"/>
+		<File RelativePath=".\mf-src\gwf2ghb7.f"/>
+		<File RelativePath=".\mf-src\gwf2hfb7.f"/>
+		<File RelativePath=".\mf-src\gwf2huf7.f"/>
+		<File RelativePath=".\mf-src\gwf2hydmod7.f"/>
+		<File RelativePath=".\mf-src\gwf2ibs7.f"/>
+		<File RelativePath=".\mf-src\gwf2lak7.f"/>
+		<File RelativePath=".\mf-src\gwf2lpf7.f"/>
+		<File RelativePath=".\mf-src\gwf2mnw17.f"/>
+		<File RelativePath=".\mf-src\gwf2mnw27.f"/>
+		<File RelativePath=".\mf-src\gwf2mnw2i7.f"/>
+		<File RelativePath=".\mf-src\gwf2rch7.f"/>
+		<File RelativePath=".\mf-src\gwf2res7.f"/>
+		<File RelativePath=".\mf-src\gwf2riv7.f"/>
+		<File RelativePath=".\mf-src\gwf2sfr7.f"/>
+		<File RelativePath=".\mf-src\gwf2str7.f"/>
+		<File RelativePath=".\mf-src\gwf2sub7.f"/>
+		<File RelativePath=".\mf-src\gwf2swi27.f"/>
+		<File RelativePath=".\mf-src\gwf2swr7.f"/>
+		<File RelativePath=".\mf-src\gwf2swr7util.f"/>
+		<File RelativePath=".\mf-src\gwf2swt7.f"/>
+		<File RelativePath=".\mf-src\gwf2uzf1.f"/>
+		<File RelativePath=".\mf-src\gwf2wel7.f"/>
+		<File RelativePath=".\mf-src\gwflakmodule.f"/>
+		<File RelativePath=".\mf-src\gwfsfrmodule.f"/>
+		<File RelativePath=".\mf-src\gwfuzfmodule.f"/>
+		<File RelativePath=".\sda-src\hdf.f90"/>
+		<File RelativePath=".\mf-src\hufutl7.f"/>
+		<File RelativePath=".\mf-src\lmt8.f"/>
+		<File RelativePath=".\mf-src\mf2005.f"/>
+		<File RelativePath=".\mf-src\mhc7.f"/>
+		<File RelativePath=".\mf-src\obs2bas7.f"/>
+		<File RelativePath=".\mf-src\obs2chd7.f"/>
+		<File RelativePath=".\mf-src\obs2drn7.f"/>
+		<File RelativePath=".\mf-src\obs2ghb7.f"/>
+		<File RelativePath=".\mf-src\obs2riv7.f"/>
+		<File RelativePath=".\mf-src\obs2str7.f"/>
+		<File RelativePath=".\mf-src\parutl7.f"/>
+		<File RelativePath=".\mf-src\pcg7.f"/>
+		<File RelativePath=".\mf-src\pcgn2.f90"/>
+		<File RelativePath=".\mf-src\pcgn_solve2.f90"/>
+		<File RelativePath=".\sda-src\sda2.f90"/>
+		<File RelativePath=".\sda-src\sda_utl.f"/>
+		<File RelativePath=".\mf-src\sip7.f"/>
+		<File RelativePath=".\mf-src\utl7.f"/></Filter>
+		<File RelativePath=".\ReadMe.txt"/></Files>
+	<Globals/></VisualStudioProject>
