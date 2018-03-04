@@ -34,7 +34,6 @@ CFLAGS = -O2 /MT
 
 
 MF_OBJ = \
-$(OBJDIR)/hdf.obj \
 $(OBJDIR)/utl7.obj \
 $(OBJDIR)/gwfsfrmodule.obj \
 $(OBJDIR)/gwf2bas7.obj \

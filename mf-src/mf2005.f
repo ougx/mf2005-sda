@@ -600,12 +600,10 @@ C10-----END OF PROGRAM.
         WRITE(*,*) ' Normal termination of simulation'
       END IF
 
-      
-      
+
       ! SDA: Start SDA Initialize
-      IF(IUNIT(66)>0) then   
-        print '(//A)',' Change NSEN to positive to start scenario mode'
-        !call SDA_Run(IUNIT(66))
+      IF(IUNIT(66)>0) then
+        WRITE(*, *) 'Change NSEN to Positive to run scenario analysis!'
       end if
 
       CALL USTOP(' ')

@@ -18,7 +18,6 @@ subroutine SDA_Ini(iin)
 
   ! initialize HDF5 (extremely important)
   call h5open_f(ierr)
-  if (ierr /= 0) call USTOP('error when initializing HDF5')
 
   ! define hdf datatypes to be used
   call h5tcopy_f(H5T_NATIVE_INTEGER, h5t_int, ierr)
@@ -316,6 +315,7 @@ subroutine SDA_SaveHCOF(KSTP,KPER)
   CHARACTER*16     :: TEXT
   CHARACTER*7      :: txtStepLayer
   integer          :: K,KKPER,KKSTP,KSTP,KPER
+  real             :: htemp(NCOL, NROW)
 
   !       1234567890123456
   !KKPER = min(1,KPER)
@@ -338,14 +338,11 @@ endsubroutine
 subroutine SDA_ReadHCOF(KSTP, KPER)
   !read flow coefficients
   use sda
-  use GLOBAL,only                         :   HCOF,IOUT,IBOUND,NCOL,NROW,NLAY,HNEW,HOLD,RHS,IUNIT,CC,CR,CV
+  use GLOBAL,only                         :   HCOF,IOUT,IBOUND,NCOL,NROW,NLAY,HNEW,HOLD,RHS,IUNIT,CC
   use GWFBASMODULE,only                   :   DELT
   integer ::  KSTP,KPER
 
   CHARACTER*7      :: txtStepLayer
-  !!! for constructing A'
-  real           , dimension(NCOL,NROW,NLAY) :: tempCC,tempCV,tempCR,tempSC
-  doubleprecision, dimension(NCOL,NROW,NLAY) :: tempHNEW
 
   integer :: K, i
 
@@ -353,7 +350,7 @@ subroutine SDA_ReadHCOF(KSTP, KPER)
     write(txtStepLayer, '(I0.4, I0.3)') iSTEP, K
     call readHDFdbl(ihdf5_in,  HNEW(:,:,K), 'HN'//txtStepLayer, g_dims)        
     if (iSTEP==0) return ! read initial head
-    if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), 'IB'//txtStepLayer, g_dims)    
+    if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), 'IB'//txtStepLayer, g_dims)           
   end do
   
   
@@ -361,49 +358,12 @@ subroutine SDA_ReadHCOF(KSTP, KPER)
   HCOF = 0.
   IF(IUNIT(1).GT.0)  CALL GWF2BCF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
   IF(IUNIT(23).GT.0) CALL GWF2LPF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
-  
-  ! calculate A'
-  tempCC = CC
-  tempCR = CR
-  tempCV = CV
-  tempHNEW = HNEW
-  
-  HNEW = HNEW + HCHG0
-  HCOF = 0.
-  IF(IUNIT(1).GT.0)  CALL GWF2BCF7FM(1, KSTP, KPER, IGRID) ! calculate CC' CR' CV' HCOF'
-  IF(IUNIT(23).GT.0) CALL GWF2LPF7FM(1, KSTP, KPER, IGRID) ! calculate CC' CR' CV' HCOF'  
   SC = -HCOF * DELT
-  
-  tempCC = CC - tempCC
-  tempCR = CR - tempCR
-  tempCV = CV - tempCV
-  
-  ! deltaA * H
-  RHS = 0
-  do i = 1, NCOL-1
-    RHS(i,:,:) = RHS(i,:,:) - tempCC(i,:,:) * (tempHNEW(i+1,:,:)-tempHNEW(i,:,:))
-  end do
-  do i = 2, NCOL
-    RHS(i,:,:) = RHS(i,:,:) - tempCC(i-1,:,:) * (tempHNEW(i-1,:,:)-tempHNEW(i,:,:))
-  end do
-  ! row flow
-  do j = 1, NROW-1
-    RHS(:,j,:) = RHS(:,j,:) - tempCR(:,j,:) * (tempHNEW(:,j+1,:)-tempHNEW(:,j,:))
-  end do
-  do j = 2, NROW
-    RHS(:,j,:) = RHS(:,j,:) - tempCR(:,j-1,:) * (tempHNEW(:,j-1,:)-tempHNEW(:,j,:))
-  end do
-  ! layer flow
-  do k = 1, NLAY-1
-    RHS(:,:,k) = RHS(:,:,k) - tempCV(:,:,k) * (tempHNEW(:,:,k+1)-tempHNEW(:,:,k))
-  end do
-  do k = 2, NLAY
-    RHS(:,:,k) = RHS(:,:,k) - tempCV(:,:,k-1) * (tempHNEW(:,:,k-1)-tempHNEW(:,:,k))
-  end do
-  RHS = HCHG0 * HCOF + RHS
+  RHS = HCHG0 * HCOF
   do i = 1, NCB
     HCOF(cbCOL(i), cbROW(i), cbLAY(i)) = HCOF(cbCOL(i), cbROW(i), cbLAY(i)) - cbCond(i)
   end do
+  
 endsubroutine
 
 

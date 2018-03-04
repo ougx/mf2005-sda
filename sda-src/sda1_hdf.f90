@@ -18,7 +18,6 @@ subroutine SDA_Ini(iin)
 
   ! initialize HDF5 (extremely important)
   call h5open_f(ierr)
-  if (ierr /= 0) call USTOP('error when initializing HDF5')
 
   ! define hdf datatypes to be used
   call h5tcopy_f(H5T_NATIVE_INTEGER, h5t_int, ierr)
@@ -101,9 +100,6 @@ subroutine SDA_Ini(iin)
     SDACV = 0.
     SDACC = 0.
     SDACR = 0.
-    
-    ! save initial head
-    call SDA_SaveHCOF(0, 0)
 
   else
     CALL SDA_Run(iin)
@@ -225,10 +221,9 @@ SUBROUTINE SDA_SaveCB(KSTP,KPER)
 
 END
 
-SUBROUTINE SDA_ReadCB(KSTP, KPER)
+SUBROUTINE SDA_ReadCB()
   !read head-dependent boundary for the current time step
   use sda
-  integer                           ::  KSTP,KPER                  !step
   character*4                       ::  txtStep
 
   if (newCB(iSTEP) > 0) then
@@ -311,96 +306,97 @@ END
 subroutine SDA_SaveHCOF(KSTP,KPER)
   !save flow coefficients
   use sda
-  use GLOBAL,only  :   IOUT,IBOUND,RHS,NCOL,NROW,NLAY,HNEW,HOLD
+  use GLOBAL,only  :   CR,CC,CV,HCOF,IOUT,IBOUND,RHS,NCOL,NROW,NLAY
 
   CHARACTER*16     :: TEXT
   CHARACTER*7      :: txtStepLayer
   integer          :: K,KKPER,KKSTP,KSTP,KPER
 
+
   !       1234567890123456
   !KKPER = min(1,KPER)
   DO K=1,NLAY
     write(txtStepLayer, '(I0.4, I0.3)') iSTEP, K
-    call saveHDFdbl(ihdf5_in, HNEW(:,:,K), 'HN'//txtStepLayer, g_dims)
-    if (iSTEP == 0) return ! to save initial head only
+
     if (iSTEP == 1 .or. any(IBOUND(:,:,K) /= SDAIBD(:,:,K))) then
       newIB(K, iSTEP) = 1
       SDAIBD(:,:,K) = IBOUND(:,:,K)
-      call saveHDFint(ihdf5_in, SDAIBD(:,:,K), 'IB'//txtStepLayer, g_dims, h5t_int)
+      call saveHDFint(ihdf5_in, SDAIBD(:,:,K), pxIB//txtStepLayer, g_dims, h5t_int)
     else
       newIB(K, iSTEP) = 0
     endif
 
-  enddo
 
+    if (iSTEP == 1 .or. any(CR(:,:,K) /= SDACR(:,:,K))) then
+      newCR(K, iSTEP) = 1
+      SDACR(:,:,K) = CR(:,:,K)
+      call saveHDFreal(ihdf5_in, SDACR(:,:,K), pxCR//txtStepLayer, g_dims)
+    else
+      newCR(K, iSTEP) = 0
+    endif
+
+
+    if (iSTEP == 1 .or. any(CV(:,:,K) /= SDACV(:,:,K))) then
+      newCV(K, iSTEP) = 1
+      SDACV(:,:,K) = CV(:,:,K)
+      call saveHDFreal(ihdf5_in, SDACV(:,:,K), pxCV//txtStepLayer, g_dims)
+    else
+      newCV(K, iSTEP) = 0
+    endif
+
+
+    if (iSTEP == 1 .or. any(CC(:,:,K) /= SDACC(:,:,K))) then
+      newCC(K, iSTEP) = 1
+      SDACC(:,:,K) = CC(:,:,K)
+      call saveHDFreal(ihdf5_in, SDACC(:,:,K), pxCC//txtStepLayer, g_dims)
+    else
+      newCC(K, iSTEP) = 0
+    endif
+
+    if (iSTEP == 1 .or. any(SDASC(:,:,K) /= SC(:,:,K))) then
+      newSC(K, iSTEP) = 1
+      SDASC(:,:,K) = SC(:,:,K)
+      call saveHDFreal(ihdf5_in, SDASC(:,:,K), pxSC//txtStepLayer, g_dims)
+    else
+      newSC(K, iSTEP) = 0
+    endif
+
+    ! HCOF does not need to be saved as it can be reconstructed from Conductance and SC
+!    if (iSTEP == 1 .or. any(SDAHCOF(:,:,K) /= HCOF(:,:,K))) then
+!      newHC(K, iSTEP) = 1
+!      SDAHCOF(:,:,K) = HCOF(:,:,K)
+!      call saveHDFreal(ihdf5_in, SDAHCOF(:,:,K), pxHC//txtStepLayer, (/NCOL, NROW/))
+!    else
+!      newHC(K, iSTEP) = 0
+!    endif
+
+  enddo
+  !check if anything change, if yes, save, otherwise skip
+
+  !if (debug) write(idebug, "(10(1PE15.7))") RHS
 endsubroutine
 
-subroutine SDA_ReadHCOF(KSTP, KPER)
+subroutine SDA_ReadHCOF()
   !read flow coefficients
   use sda
-  use GLOBAL,only                         :   HCOF,IOUT,IBOUND,NCOL,NROW,NLAY,HNEW,HOLD,RHS,IUNIT,CC,CR,CV
+  use GLOBAL,only                         :   CR,CC,CV,HCOF,IOUT,IBOUND,NCOL,NROW,NLAY
   use GWFBASMODULE,only                   :   DELT
   integer ::  KSTP,KPER
 
   CHARACTER*7      :: txtStepLayer
-  !!! for constructing A'
-  real           , dimension(NCOL,NROW,NLAY) :: tempCC,tempCV,tempCR,tempSC
-  doubleprecision, dimension(NCOL,NROW,NLAY) :: tempHNEW
 
   integer :: K, i
 
   DO K=1,NLAY
     write(txtStepLayer, '(I0.4, I0.3)') iSTEP, K
-    call readHDFdbl(ihdf5_in,  HNEW(:,:,K), 'HN'//txtStepLayer, g_dims)        
-    if (iSTEP==0) return ! read initial head
-    if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), 'IB'//txtStepLayer, g_dims)    
+    if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), pxIB//txtStepLayer, g_dims)
+    if (newCC(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CC(:,:,K), pxCC//txtStepLayer, g_dims)
+    if (newCR(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CR(:,:,K), pxCR//txtStepLayer, g_dims)
+    if (newCV(K, iSTEP) == 1) call readHDFreal(ihdf5_in, CV(:,:,K), pxCV//txtStepLayer, g_dims)
+    if (newSC(K, iSTEP) == 1) call readHDFreal(ihdf5_in, SC(:,:,K), pxSC//txtStepLayer, g_dims)
   end do
-  
-  
-  ! calculate A
-  HCOF = 0.
-  IF(IUNIT(1).GT.0)  CALL GWF2BCF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
-  IF(IUNIT(23).GT.0) CALL GWF2LPF7FM(1, KSTP, KPER, IGRID) ! update CC CR CV HCOF
-  
-  ! calculate A'
-  tempCC = CC
-  tempCR = CR
-  tempCV = CV
-  tempHNEW = HNEW
-  
-  HNEW = HNEW + HCHG0
-  HCOF = 0.
-  IF(IUNIT(1).GT.0)  CALL GWF2BCF7FM(1, KSTP, KPER, IGRID) ! calculate CC' CR' CV' HCOF'
-  IF(IUNIT(23).GT.0) CALL GWF2LPF7FM(1, KSTP, KPER, IGRID) ! calculate CC' CR' CV' HCOF'  
-  SC = -HCOF * DELT
-  
-  tempCC = CC - tempCC
-  tempCR = CR - tempCR
-  tempCV = CV - tempCV
-  
-  ! deltaA * H
-  RHS = 0
-  do i = 1, NCOL-1
-    RHS(i,:,:) = RHS(i,:,:) - tempCC(i,:,:) * (tempHNEW(i+1,:,:)-tempHNEW(i,:,:))
-  end do
-  do i = 2, NCOL
-    RHS(i,:,:) = RHS(i,:,:) - tempCC(i-1,:,:) * (tempHNEW(i-1,:,:)-tempHNEW(i,:,:))
-  end do
-  ! row flow
-  do j = 1, NROW-1
-    RHS(:,j,:) = RHS(:,j,:) - tempCR(:,j,:) * (tempHNEW(:,j+1,:)-tempHNEW(:,j,:))
-  end do
-  do j = 2, NROW
-    RHS(:,j,:) = RHS(:,j,:) - tempCR(:,j-1,:) * (tempHNEW(:,j-1,:)-tempHNEW(:,j,:))
-  end do
-  ! layer flow
-  do k = 1, NLAY-1
-    RHS(:,:,k) = RHS(:,:,k) - tempCV(:,:,k) * (tempHNEW(:,:,k+1)-tempHNEW(:,:,k))
-  end do
-  do k = 2, NLAY
-    RHS(:,:,k) = RHS(:,:,k) - tempCV(:,:,k-1) * (tempHNEW(:,:,k-1)-tempHNEW(:,:,k))
-  end do
-  RHS = HCHG0 * HCOF + RHS
+
+  HCOF = -SC / DELT
   do i = 1, NCB
     HCOF(cbCOL(i), cbROW(i), cbLAY(i)) = HCOF(cbCOL(i), cbROW(i), cbLAY(i)) - cbCond(i)
   end do
@@ -428,7 +424,13 @@ subroutine SDA_Run(iin)
   if (NSEN<0) then
 
     ! release the array from baseline run
-    NSEN = abs(NSEN)
+    deallocate(SDAIBD)
+    deallocate(SDACV)
+    deallocate(SDACC)
+    deallocate(SDACR)
+    deallocate(SDAHCOF)
+    deallocate(SDASC)
+
   endif
 
 
@@ -445,8 +447,7 @@ subroutine SDA_Run(iin)
   !rate of each zone
   allocate(RBZONE(2,0:NBZONEMax,20))
 
-  ! head change
-  allocate(HCHG0(NCOL,NROW,NLAY),HCHG1(NCOL,NROW,NLAY))
+
 
 !  ConstantCC = .false.
 !  ConstantSC = .false.
@@ -478,6 +479,10 @@ subroutine SDA_Run(iin)
   write(iout, *) ' read data flags'
   call readHDFint(ihdf5_in, newIB, 'newIB', c_dims)
   call readHDFint(ihdf5_in, newCB, 'newCB', (/int(NSTEP, hsize_t)/))
+  call readHDFint(ihdf5_in, newCC, 'newCC', c_dims)
+  call readHDFint(ihdf5_in, newCR, 'newCR', c_dims)
+  call readHDFint(ihdf5_in, newCV, 'newCV', c_dims)
+  call readHDFint(ihdf5_in, newSC, 'newSC', c_dims)
   
   ! enter scenario run
   do isen = 1, abs(NSEN)
@@ -497,7 +502,7 @@ subroutine SDA_NewScen(iin)
   implicit none
   integer                           ::  iin                   !main SDA file
   integer                           ::  KSTP, KPER
-  integer                           ::  N,LLOC,IFLEN,K
+  integer                           ::  N,LLOC,IFLEN
   integer                           ::  ITYP1,ITYP2
   integer                           ::  INAM1,INAM2
   real                              ::  R
@@ -507,7 +512,7 @@ subroutine SDA_NewScen(iin)
   INTEGER                           ::  IBDT(8,10)
   logical                           ::  sol
   integer                           ::  ierr
-  character*7                       ::  txtStepLayer
+
 
   DTRead = 0.d0
   DTStpEnd = 0.d0
@@ -677,14 +682,10 @@ subroutine SDA_NewScen(iin)
 
   TOTIM = 0.0
   PERTIM = 0.0
-  HCHG1 = 0.0d0
-  HCHG0 = 0.
+  HNEW = 0.0d0
   CALL DATE_AND_TIME(VALUES=IBDT(:,2))
-  
-  ! check out initial head
+
   iSTEP = 0
-  call SDA_ReadHCOF(0, 0)
-  
   do KPER = 1, NPER
 
     CALL GWF2BAS7ST(KPER,IGRID)
@@ -760,7 +761,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
   USE SIPMODULE
   USE DE4MODULE
   USE GMGMODULE
-  USE PCGN, only: PCGN2AP
+  USE PCGN
   use GLOBAL
   use GWFBASMODULE
 
@@ -777,20 +778,26 @@ subroutine SDA_NewTSP(KSTP, KPER)
   KKSTP=KSTP; KKPER=KPER
   !del time
   CALL GWF2BAS7AD(KKPER,KKSTP,IGRID)
-  !save head change
-  HCHG0 = HCHG1
 
 
-  call SDA_ReadCB(KSTP, KPER)
+  call SDA_ReadCB()
   !read IBOUND, CV,CC,CR,HCOF
-  call SDA_ReadHCOF(KSTP, KPER)
+  call SDA_ReadHCOF()
+
+
   call date_and_time(values = ITT(:,2))
+  !if (debug) go to 101
+  !read addtional well or recharge
+  RHS = - HOLD * SC / DELT
 
   if (QWEL > 0) call GWF2WEL7FM(IGRID)
   if (QRCH > 0) call GWF2RCH7FM(IGRID)
 
+  !if (debug) write(idebug, "(10(1PE15.7))") RHS
 
 
+  !initial guess
+  !HNEW = 0.0d0
 
   !7C2----ITERATIVELY FORMULATE AND SOLVE THE FLOW EQUATIONS.
   DO KITER = 1, MXITER
@@ -800,14 +807,14 @@ subroutine SDA_NewTSP(KSTP, KPER)
     IER=0
     IF (IUNIT(9) /= 0) THEN
       CALL SIP7PNT(IGRID)
-      CALL SIP7AP(HCHG1,IBOUND,CR,CC,CV,HCOF,RHS,EL,FL,GL, &
+      CALL SIP7AP(HNEW,IBOUND,CR,CC,CV,HCOF,RHS,EL,FL,GL, &
         V,W,HDCG,LRCH,NPARM,KKITER,HCLOSE,ACCL,ICNVG, &
         KKSTP,KKPER,IPCALC,IPRSIP,MXITER,NSTP(KKPER), &
         NCOL,NROW,NLAY,NODES,IOUT,0,IER)
     END IF
     IF (IUNIT(10) /= 0) THEN
       CALL DE47PNT(IGRID)
-      CALL DE47AP(HCHG1,IBOUND,AU,AL,IUPPNT,IEQPNT,D4B,MXUP, &
+      CALL DE47AP(HNEW,IBOUND,AU,AL,IUPPNT,IEQPNT,D4B,MXUP, &
         MXLOW,MXEQ,MXBW,CR,CC,CV,HCOF,RHS,ACCLDE4,KITER, &
         ITMX,MXITER,NITERDE4,HCLOSEDE4,IPRD4,ICNVG,NCOL, &
         NROW,NLAY,IOUT,LRCHDE4,HDCGDE4,IFREQ,KKSTP,KKPER, &
@@ -816,7 +823,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
     END IF
     IF (IUNIT(13) /= 0) THEN
       CALL PCG7PNT(IGRID)
-      CALL PCG7AP(HCHG1,IBOUND,CR,CC,CV,HCOF,RHS,VPCG,SS, &
+      CALL PCG7AP(HNEW,IBOUND,CR,CC,CV,HCOF,RHS,VPCG,SS, &
         P,CD,HCHG,LHCH,RCHG,LRCHPCG,KKITER,NITER, &
         HCLOSEPCG,RCLOSEPCG,ICNVG,KKSTP,KKPER,IPRPCG, &
         MXITER,ITER1,NPCOND,NBPOL,NSTP(KKPER),NCOL,NROW, &
@@ -833,7 +840,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
     !            END IF
     IF (IUNIT(42) /= 0) THEN
       CALL GMG7PNT(IGRID)
-      CALL GMG7AP(HCHG1,RHS,CR,CC,CV,HCOF,HNOFLO,IBOUND, &
+      CALL GMG7AP(HNEW,RHS,CR,CC,CV,HCOF,HNOFLO,IBOUND, &
         IITER,MXITER,RCLOSEGMG,HCLOSEGMG, &
         KKITER,KKSTP,KKPER,NCOL,NROW,NLAY,ICNVG, &
         SITER,TSITER,DAMPGMG,IADAMPGMG,IOUTGMG, &
@@ -842,7 +849,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
         BIGHEADCHG,HNEWLAST)
     ENDIF
     IF (IUNIT(59) /= 0) THEN
-      CALL PCGN2AP(HCHG1,RHS,CR,CC,CV,HCOF,IBOUND,KKITER,KKSTP,KKPER,ICNVG,HNOFLO,IGRID)
+      CALL PCGN2AP(HNEW,RHS,CR,CC,CV,HCOF,IBOUND,KKITER,KKSTP,KKPER,ICNVG,HNOFLO,IGRID)
       !call USTOP('Not supporting PCGN')
     ENDIF
     IF(IER.EQ.1) CALL USTOP(' ')
@@ -856,18 +863,17 @@ subroutine SDA_NewTSP(KSTP, KPER)
     WRITE(IOUT,* ) ' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA'
     call USTOP(' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA')
   END IF
-  
 
   !outputs
   if (QHED > 0) then
     do k=1, NLAY
       kk=k
-      call ULASV2(real(HCHG1(:,:,K)),' HEAD DIFFERENCE',KSTP,KPER,PERTIM,TOTIM,NCOL,NROW,KK,iHED,CDDNFM,LBDDSV,IBOUND(:,:,K))
+      call ULASV2(real(HNEW(:,:,K)),' HEAD DIFFERENCE',KSTP,KPER,PERTIM,TOTIM,NCOL,NROW,KK,iHED,CDDNFM,LBDDSV,IBOUND(:,:,K))
     enddo
   elseif (QHED < 0) then
     do k=1, NLAY
       kk=k
-      call ULASAV(real(HCHG1(:,:,K)),' HEAD DIFFERENCE',KSTP,KPER,PERTIM,TOTIM,NCOL,NROW,KK,iHED)
+      call ULASAV(real(HNEW(:,:,K)),' HEAD DIFFERENCE',KSTP,KPER,PERTIM,TOTIM,NCOL,NROW,KK,iHED)
     enddo
   endif
 
@@ -911,15 +917,18 @@ subroutine SDA_BD(KSTP,KPER)
 
 
   iTypeBC = 1
-  
+  !Storage
+  !where (IBOUND > 0)
+    !QQSC = SDASC*(HOLD-HNEW)
+  !end where
 
-  write (IOUT,"(/,A,1PE16.9/)") "TOTAL DRAWDOWN IS ", sum(HCHG1)
+  if (debug) write (IOUT,"(/,A,1PE16.9/)") "TOTAL DRAWDOWN IS ", sum(HNEW)
   DO IR=1,NROW
     DO IC=1,NCOL
       DO IL=1,NLAY
         if (IBOUND(IC,IR,IL) > 0) then
-          Q = SC(IC,IR,IL)*(HCHG0(IC,IR,IL)-HCHG1(IC,IR,IL)) / DELT
-          call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HCHG1(IC,IR,IL),Q)
+          Q = SC(IC,IR,IL)*(HOLD(IC,IR,IL)-HNEW(IC,IR,IL)) / DELT
+          call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
         endif
       enddo  !IL=1,NLAY
     enddo !IC=1,NCOL
@@ -943,7 +952,7 @@ subroutine SDA_BD(KSTP,KPER)
       IL=WELL(1,i)
       IF(IBOUND(IC,IR,IL) > 0) then
         Q=WELL(4,i)
-        call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HCHG1(IC,IR,IL),Q)
+        call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
       endif
     enddo
   endif
@@ -962,7 +971,7 @@ subroutine SDA_BD(KSTP,KPER)
 
           IF(IBOUND(IC,IR,1).GT.0) THEN
             Q=RECH(IC,IR)
-            call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HCHG1(IC,IR,IL),Q)
+            call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
 
           END IF
         enddo !IR=1,NROW
@@ -981,7 +990,7 @@ subroutine SDA_BD(KSTP,KPER)
           IF(IL.EQ.0) exit
           IF(IBOUND(IC,IR,IL).GT.0) THEN
             Q=RECH(IC,IR)
-            call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HCHG1(IC,IR,IL),Q)
+            call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
 
           END IF
         enddo !IC=1,NCOL
@@ -1001,7 +1010,7 @@ subroutine SDA_BD(KSTP,KPER)
             !7C-----IF CELL IS VARIABLE HEAD, THEN DO BUDGET FOR IT.
             IF (IBOUND(IC,IR,IL).GT.0) THEN
               Q=RECH(IC,IR)
-              call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HCHG1(IC,IR,IL),Q)
+              call SDA_SaveBD(iCBB,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
               exit
             END IF
           enddo  !IL=1,NLAY
@@ -1018,9 +1027,9 @@ subroutine SDA_BD(KSTP,KPER)
     IR = cbROW(i)
     IL = cbLAY(i)
     if (IBOUND(IC,IR,IL) > 0) then
-      Q = -cbCond(i)*HCHG1(IC,IR,IL)
+      Q = -cbCond(i)*HNEW(IC,IR,IL)
       iTypeBC = cbTyp(i)
-      call SDA_SaveBD(0,iSTEP,IC,IR,IL,HCHG1(IC,IR,IL),Q)
+      call SDA_SaveBD(0,iSTEP,IC,IR,IL,HNEW(IC,IR,IL),Q)
     endif
   enddo
 

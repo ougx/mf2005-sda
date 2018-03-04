@@ -163,7 +163,6 @@ subroutine SDA_Ini(iin)
   allocate(iCR(NPER))                   !output file number for baseline CR, positive is unformatted, negative is formatted
   allocate(iCC(NPER))                   !output file number for baseline CC, positive is unformatted, negative is formatted
   allocate(iCV(NPER))                   !output file number for baseline CV, positive is unformatted, negative is formatted
-  allocate(iHCOF(NPER))                 !output file number for baseline HCOF, positive is unformatted, negative is formatted
   !allocate(iRHS(1))                  !output file number for baseline RHS, positive is unformatted, negative is formatted
   allocate(iSC(NPER))                   !output file number for baseline SC, positive is unformatted, negative is formatted
   allocate(iCB(NPER))                   !output file number for baseline boundary condutance
@@ -203,7 +202,6 @@ subroutine SDA_Ini(iin)
     call URWORD(sline,iloc,i1,i2,2,iCR(iper),rtmp,IOUT,iin)
     call URWORD(sline,iloc,i1,i2,2,iCV(iper),rtmp,IOUT,iin)
     call URWORD(sline,iloc,i1,i2,2,iSC(iper),rtmp,IOUT,iin)
-    call URWORD(sline,iloc,i1,i2,2,iHCOF(iper),rtmp,IOUT,iin)
     call URWORD(sline,iloc,i1,i2,2,iCB(iper),rtmp,IOUT,iin)
 !    call URWORD(sline,iloc,i1,i2,2,iERR(iper),rtmp,IOUT,iin)
 !
@@ -217,7 +215,6 @@ subroutine SDA_Ini(iin)
     iCR(iper0:(iper-1)) = iCR(iper)
     iCC(iper0:(iper-1)) = iCC(iper)
     iCV(iper0:(iper-1)) = iCV(iper)
-    iHCOF(iper0:(iper-1)) = iHCOF(iper)
     iSC(iper0:(iper-1)) = iSC(iper)
     iCB(iper0:(iper-1)) = iCB(iper)
     !iERR(iper0:(iper-1)) = iERR(iper)
@@ -868,7 +865,6 @@ subroutine SDA_NewScen(iin)
     rewind(iCC(KPER))
     rewind(iCR(KPER))
     rewind(iCV(KPER))
-    rewind(iHCOF(KPER))
     rewind(iSC(KPER))
     rewind(iCB(KPER))
   enddo
