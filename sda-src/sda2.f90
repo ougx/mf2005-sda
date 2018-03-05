@@ -852,10 +852,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
   enddo
 
   call date_and_time(values = ITT(:,3))
-  IF(ICNVG.EQ.0) THEN
-    WRITE(IOUT,* ) ' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA'
-    call USTOP(' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA')
-  END IF
+  
   
 
   !outputs
@@ -874,8 +871,14 @@ subroutine SDA_NewTSP(KSTP, KPER)
 
 
   !output
-  call SDA_BD(KKSTP,KKPER)
-
+  call SDA_BD(KKSTP,KKPER,BUDPERC)
+  IF(ICNVG.EQ.0) THEN
+    WRITE(IOUT,* ) ' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA'
+    IF(ABS(BUDPERC)>STOPER) THEN
+      call USTOP(' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA')
+    end if
+  END IF
+  
   call TIMEDIFF(ITT(:,1),ITT(:,2),dt)
   DTRead = DTRead + dble(dt)
   call date_and_time(values = ITT(:,4))
@@ -887,7 +890,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
 endsubroutine
 
 
-subroutine SDA_BD(KSTP,KPER)
+subroutine SDA_BD(KSTP,KPER,BUDPERC)
   !calculate volumetric budgets
   !use numbers
   use sda
@@ -898,6 +901,7 @@ subroutine SDA_BD(KSTP,KPER)
 
   implicit none
   integer                           ::  KSTP,KPER
+  real                              ::  BUDPERC ! budget discrepancy
   integer                           ::  i, IR, IC, IL, NHC
   integer,allocatable               ::  IIR(:), IIC(:), IIL(:)
   double precision                  ::  Q               !flow term
@@ -913,7 +917,7 @@ subroutine SDA_BD(KSTP,KPER)
   iTypeBC = 1
   
 
-  write (IOUT,"(/,A,1PE16.9/)") "TOTAL DRAWDOWN IS ", sum(HCHG1)
+  !write (IOUT,"(/,A,1PE16.9/)") "TOTAL DRAWDOWN IS ", sum(HCHG1)
   DO IR=1,NROW
     DO IC=1,NCOL
       DO IL=1,NLAY
@@ -1030,7 +1034,7 @@ subroutine SDA_BD(KSTP,KPER)
   VBVL(3,1:MSUM) = real(CBVBVL(3,1:MSUM))
   VBVL(4,1:MSUM) = real(CBVBVL(4,1:MSUM))
 
-  CALL SGWF2BAS7V(MSUM+1,VBNM,VBVL,KSTP,KPER,IOUT,Qnet)
+  CALL SGWF2BAS7V(MSUM+1,VBNM,VBVL,KSTP,KPER,IOUT,BUDPERC)
   call SGWF2BAS7T(KSTP,KPER,DELT,PERTIM,TOTIM,ITMUNI,IOUT)
   write(IOUT, "(//)")
 
