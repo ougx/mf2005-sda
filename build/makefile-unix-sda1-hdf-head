@@ -4,7 +4,7 @@
 
 # Define the directories for the object and module files,
 # the executable, and the executable name and path.
-OBJDIR = ./obj_temp1unix
+OBJDIR = ./obj_hdf_head
 BINDIR =
 PROGRAM = mf2005-sda1-h5-head_ux
 
@@ -29,6 +29,7 @@ SYSLIBS = -lc
 
 OBJECTS = \
 $(OBJDIR)/utl7.o \
+$(OBJDIR)/hdf_mod.o \
 $(OBJDIR)/gwfsfrmodule.o \
 $(OBJDIR)/gwf2bas7.o \
 $(OBJDIR)/gwf2rch7.o \

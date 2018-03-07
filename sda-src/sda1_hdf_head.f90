@@ -3,6 +3,7 @@
 subroutine SDA_Ini(iin)
   !initialize
   use sda
+  use HDF
   use GLOBAL,only                         :   NSTP,NPER,NCOL,NROW,NLAY,IUNIT,IOUT,IBOUND
   use GWFBASMODULE,only                   :   MSUM,VBNM
   integer                                 ::  iin                   !input file number of SDA main file
@@ -18,6 +19,7 @@ subroutine SDA_Ini(iin)
 
   ! initialize HDF5 (extremely important)
   call h5open_f(ierr)
+  if (ierr /= 0) call USTOP('error when initializing HDF5')
 
   ! define hdf datatypes to be used
   call h5tcopy_f(H5T_NATIVE_INTEGER, h5t_int, ierr)
@@ -32,6 +34,11 @@ subroutine SDA_Ini(iin)
   CALL URDCOM(iin,IOUT,sline)
   call URWORD(sline,iloc,i1,i2,2,NSEN,rtmp,IOUT,iin)
   call URWORD(sline,iloc,i1,i2,2,NCBMAX,rtmp,IOUT,iin)
+  if (NCBMAX<0) then
+    NCBMAX=-NCBMAX
+    CALL h5fcreate_f('debug.h5', H5F_ACC_TRUNC_F, ihdf5_db, iERR)
+    if (iERR /= 0) call USTOP('Program cannot create HDF5 file: debug.h5')
+  end if
   allocate(cbCOL(NCBMAX), cbROW(NCBMAX), cbLAY(NCBMAX), cbTyp(NCBMAX), cbCond(NCBMAX), cbHead(NCBMAX))
   allocate(cbCOL_o(NCBMAX), cbROW_o(NCBMAX), cbLAY_o(NCBMAX), cbTyp_o(NCBMAX), cbCond_o(NCBMAX), cbHead_o(NCBMAX))
 
@@ -166,6 +173,7 @@ end subroutine
 subroutine SDA_IterEnd(KSTP,KPER)
   !baseline time step end
   use sda
+  use HDF
   use GLOBAL, only: NLAY
   integer(hsize_t) :: m_dims(2)
 
@@ -190,6 +198,7 @@ end subroutine
 SUBROUTINE SDA_SaveCB(KSTP,KPER)
   !save head-dependent boundary for the current time step
   use sda
+  use HDF
   use GLOBAL, only : IOUT
   integer                           ::  i
   integer                           ::  KSTP                  !col
@@ -227,6 +236,8 @@ END
 SUBROUTINE SDA_ReadCB(KSTP, KPER)
   !read head-dependent boundary for the current time step
   use sda
+  use HDF
+  use HDF
   integer                           ::  KSTP,KPER                  !step
   character*4                       ::  txtStep
 
@@ -310,12 +321,12 @@ END
 subroutine SDA_SaveHCOF(KSTP,KPER)
   !save flow coefficients
   use sda
+  use HDF
   use GLOBAL,only  :   IOUT,IBOUND,RHS,NCOL,NROW,NLAY,HNEW,HOLD
 
   CHARACTER*16     :: TEXT
   CHARACTER*7      :: txtStepLayer
   integer          :: K,KKPER,KKSTP,KSTP,KPER
-  real             :: htemp(NCOL, NROW)
 
   !       1234567890123456
   !KKPER = min(1,KPER)
@@ -338,19 +349,19 @@ endsubroutine
 subroutine SDA_ReadHCOF(KSTP, KPER)
   !read flow coefficients
   use sda
-  use GLOBAL,only                         :   HCOF,IOUT,IBOUND,NCOL,NROW,NLAY,HNEW,HOLD,RHS,IUNIT,CC
+  use HDF
+  use GLOBAL,only                         :   HCOF,IOUT,IBOUND,NCOL,NROW,NLAY,HNEW,HOLD,RHS,IUNIT,CC,CR,CV
   use GWFBASMODULE,only                   :   DELT
   integer ::  KSTP,KPER
 
   CHARACTER*7      :: txtStepLayer
-
   integer :: K, i
 
   DO K=1,NLAY
     write(txtStepLayer, '(I0.4, I0.3)') iSTEP, K
     call readHDFdbl(ihdf5_in,  HNEW(:,:,K), 'HN'//txtStepLayer, g_dims)        
     if (iSTEP==0) return ! read initial head
-    if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), 'IB'//txtStepLayer, g_dims)           
+    if (newIB(K, iSTEP) == 1) call readHDFint(ihdf5_in, IBOUND(:,:,K), 'IB'//txtStepLayer, g_dims)    
   end do
   
   
@@ -363,7 +374,6 @@ subroutine SDA_ReadHCOF(KSTP, KPER)
   do i = 1, NCB
     HCOF(cbCOL(i), cbROW(i), cbLAY(i)) = HCOF(cbCOL(i), cbROW(i), cbLAY(i)) - cbCond(i)
   end do
-  
 endsubroutine
 
 
@@ -372,6 +382,7 @@ subroutine SDA_Run(iin)
   !start SDA
   !baseline run can be skipped. coefficients are read from the the file directly
   use sda
+  use HDF
   use GLOBAL
   use GWFBASMODULE
 
@@ -451,6 +462,7 @@ endsubroutine
 subroutine SDA_NewScen(iin)
   !advance to next scenario run
   use sda
+  use HDF
   use GLOBAL
   use GWFBASMODULE, only            :   TOTIM,CDDNFM,IHEDFM,LBDDSV,PERTIM,VBNM,VBVL
   use PCGN
@@ -716,6 +728,7 @@ end subroutine
 subroutine SDA_NewTSP(KSTP, KPER)
   !advance to next time step
   use sda
+  use HDF
   USE PCGMODULE
   USE SIPMODULE
   USE DE4MODULE
@@ -730,6 +743,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
   real                              ::  BUDPERC               !mass balance error
   integer                           ::  ITT(8,10)
   real                              ::  dt
+  CHARACTER*7      :: txtStepLayer
 
   call date_and_time(values = ITT(:,1))
 
@@ -749,7 +763,14 @@ subroutine SDA_NewTSP(KSTP, KPER)
   if (QWEL > 0) call GWF2WEL7FM(IGRID)
   if (QRCH > 0) call GWF2RCH7FM(IGRID)
 
-
+  do K=1,NLAY
+    write(txtStepLayer, '(I0.4, I0.3)') iSTEP, K
+    call saveHDFreal(ihdf5_db, CC(:,:,K), 'CC'//txtStepLayer, g_dims)
+    call saveHDFreal(ihdf5_db, CR(:,:,K), 'CR'//txtStepLayer, g_dims)
+    call saveHDFreal(ihdf5_db, RHS(:,:,K), 'RHS'//txtStepLayer, g_dims)
+    call saveHDFreal(ihdf5_db, HCOF(:,:,K), 'HCOF'//txtStepLayer, g_dims)
+    call saveHDFreal(ihdf5_db, real(HCHG1(:,:,K)), 'DH'//txtStepLayer, g_dims)
+  end do
 
 
   !7C2----ITERATIVELY FORMULATE AND SOLVE THE FLOW EQUATIONS.
@@ -812,10 +833,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
   enddo
 
   call date_and_time(values = ITT(:,3))
-  IF(ICNVG.EQ.0) THEN
-    WRITE(IOUT,* ) ' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA'
-    call USTOP(' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA')
-  END IF
+  
   
 
   !outputs
@@ -834,8 +852,15 @@ subroutine SDA_NewTSP(KSTP, KPER)
 
 
   !output
-  call SDA_BD(KKSTP,KKPER)
-
+  call SDA_BD(KKSTP,KKPER,BUDPERC)
+  IF(ICNVG.EQ.0) THEN
+    WRITE(IOUT,* ) ' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA'
+    IF(ABS(BUDPERC)>STOPER) THEN
+      write(IOUT, *) 'PERCENT DISCREPANCY: ', BUDPERC
+      call USTOP(' FAILURE TO MEET SOLVER CONVERGENCE CRITERIA')
+    end if
+  END IF
+  
   call TIMEDIFF(ITT(:,1),ITT(:,2),dt)
   DTRead = DTRead + dble(dt)
   call date_and_time(values = ITT(:,4))
@@ -847,7 +872,7 @@ subroutine SDA_NewTSP(KSTP, KPER)
 endsubroutine
 
 
-subroutine SDA_BD(KSTP,KPER)
+subroutine SDA_BD(KSTP,KPER,BUDPERC)
   !calculate volumetric budgets
   !use numbers
   use sda
@@ -858,6 +883,7 @@ subroutine SDA_BD(KSTP,KPER)
 
   implicit none
   integer                           ::  KSTP,KPER
+  real                              ::  BUDPERC ! budget discrepancy
   integer                           ::  i, IR, IC, IL, NHC
   integer,allocatable               ::  IIR(:), IIC(:), IIL(:)
   double precision                  ::  Q               !flow term
@@ -980,6 +1006,16 @@ subroutine SDA_BD(KSTP,KPER)
     if (IBOUND(IC,IR,IL) > 0) then
       Q = -cbCond(i)*HCHG1(IC,IR,IL)
       iTypeBC = cbTyp(i)
+      ! debug. 
+      if (abs(Q) > 1000.) then
+        write(IOUT, '(/,A5,3I5)') 'CRL= ', IC, IR, IL
+        write(IOUT, *) 'IB = ', IBOUND(IC,IR,IL)
+        write(IOUT, *) 'dH = ', HCHG1(IC,IR,IL)
+        write(IOUT, *) 'dH0= ', HCHG0(IC,IR,IL)
+        write(IOUT, *) 'CB = ', cbCond(i)
+        write(IOUT, *) 'Tp = ', CBTYPE(iTypeBC)
+        write(IOUT, *) 'Q  = ', Q
+      end if
       call SDA_SaveBD(0,iSTEP,IC,IR,IL,HCHG1(IC,IR,IL),Q)
     endif
   enddo
@@ -990,7 +1026,7 @@ subroutine SDA_BD(KSTP,KPER)
   VBVL(3,1:MSUM) = real(CBVBVL(3,1:MSUM))
   VBVL(4,1:MSUM) = real(CBVBVL(4,1:MSUM))
 
-  CALL SGWF2BAS7V(MSUM+1,VBNM,VBVL,KSTP,KPER,IOUT,Qnet)
+  CALL SGWF2BAS7V(MSUM+1,VBNM,VBVL,KSTP,KPER,IOUT,BUDPERC)
   call SGWF2BAS7T(KSTP,KPER,DELT,PERTIM,TOTIM,ITMUNI,IOUT)
   write(IOUT, "(//)")
 

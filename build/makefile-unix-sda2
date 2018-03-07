@@ -29,6 +29,7 @@ SYSLIBS = -lc
 
 OBJECTS = \
 $(OBJDIR)/utl7.o \
+$(OBJDIR)/hdf_mod.o \
 $(OBJDIR)/gwfsfrmodule.o \
 $(OBJDIR)/gwf2bas7.o \
 $(OBJDIR)/gwf2rch7.o \
