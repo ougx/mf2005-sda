@@ -11,3 +11,8 @@ sda-src/hdf_test.f90
 *.tlog
 Debug/BuildLog.htm
 *.manifest
+build/mf2005-sda1_ux
+build/mf2005-sda1-h5_ux
+build/mf2005-sda1-h5-head_ux
+build/mf2005-sda1-h5-head_ux-debug
+build/mf2005-sda2
