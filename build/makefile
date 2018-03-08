@@ -4,9 +4,9 @@
 
 # Define the directories for the object and module files,
 # the executable, and the executable name and path.
-OBJDIR = ./obj_temp1unix
+OBJDIR = ./obj_temp
 BINDIR =
-PROGRAM = mf2005-sda2
+PROGRAM = mf2005-sda1-h5_ux
 
 SOURCEDIR1=../src
 
@@ -29,7 +29,6 @@ SYSLIBS = -lc
 
 OBJECTS = \
 $(OBJDIR)/utl7.o \
-$(OBJDIR)/hdf_mod.o \
 $(OBJDIR)/gwfsfrmodule.o \
 $(OBJDIR)/gwf2bas7.o \
 $(OBJDIR)/gwf2rch7.o \
@@ -82,13 +81,13 @@ $(OBJDIR)/gwf2uzf1.o \
 $(OBJDIR)/gwf2mnw17.o \
 $(OBJDIR)/mf2005.o \
 $(OBJDIR)/lmt8.o \
-$(OBJDIR)/sda2_mod.o \
-$(OBJDIR)/sda2.o \
-$(OBJDIR)/sda_utl.o \
 $(OBJDIR)/r_vector.o \
 $(OBJDIR)/mf2kgmg.o \
 $(OBJDIR)/solvers.o \
 $(OBJDIR)/ccfd.o \
+$(OBJDIR)/sda1_hdf_mod.o \
+$(OBJDIR)/sda1_hdf.o \
+$(OBJDIR)/sda_utl_sda1.o
 # Define task functions
 
 # Compile and link the executable
