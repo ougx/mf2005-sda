@@ -78,4 +78,4 @@ Please note that recharge rate used for the recharge package is the accretion fl
 
 
 ## License
-SDA is distributed under the GNU Public License Version 3. For details visit the [online version](http://www.gnu.org/licenses/gpl-3.0.html).
+SDA is distributed under the GNU Public License Version 3. For details visit [here](http://www.gnu.org/licenses/gpl-3.0.html).
