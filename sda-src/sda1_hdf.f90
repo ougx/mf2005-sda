@@ -51,7 +51,7 @@ subroutine SDA_Ini(iin)
   !write(IOUT,*) " READING UNIT NUMBERS FOR SDA ... "
 
 
-  if (debug) open(newunit=idebug, file="debug.txt")
+  ! if (debug) open(newunit=idebug, file="debug.txt")
 
 
   NSTEP = sum(NSTP)
@@ -475,7 +475,7 @@ subroutine SDA_Run(iin)
 
   ! determine the head-dependent flow terms used in the model
   call SDA_FindCBType()
-  
+
   write(iout, *) ' read data flags'
   call readHDFint(ihdf5_in, newIB, 'newIB', c_dims)
   call readHDFint(ihdf5_in, newCB, 'newCB', (/int(NSTEP, hsize_t)/))
@@ -483,7 +483,7 @@ subroutine SDA_Run(iin)
   call readHDFint(ihdf5_in, newCR, 'newCR', c_dims)
   call readHDFint(ihdf5_in, newCV, 'newCV', c_dims)
   call readHDFint(ihdf5_in, newSC, 'newSC', c_dims)
-  
+
   ! enter scenario run
   do isen = 1, abs(NSEN)
     call SDA_NewScen(iin)
