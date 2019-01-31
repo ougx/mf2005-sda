@@ -6,8 +6,8 @@ Input to the Stream Depletion Analysis (SDA) Package is read from the file that 
 All variables are free format.
 
 ```
-Dataset 1:  NSEN NCBMAX
-Dataset 2:  FileCof
+Dataset 1:  NSEN NCBMAX NSET
+Dataset 2:  EndPeriod1 IACTIVE ICC ICR ICV ISC IHCOF ICB
 Dataset 3a: ScenName
 Dataset 3b: ListFile
 Dataset 3c: SFtype SFname
@@ -30,7 +30,23 @@ If `NSEN = 0`, SDA is inactivated.
 
 ##### Dataset 2 #####
 
-1. `FileCof` --- HDF5 File name to store baseline flow coefficients.
+Repeat `NSET` times of Dataset 2 as each set for one scenario
+
+1. `FileCof` --- The ending stress period of a file set. For a model composed by 200 stress periods, for example, the data of the first 100 stress periods can be saved in first set of files and the second 100 stress periods saved in the other file set. KPER will be specified as 100 and 200 respectively for the first and second file set.
+
+2. `IACTIVE` File unit number for writing and reading the IBOUND array.
+
+3. `ICC` File unit number for writing and reading the CC array.
+
+4. `ICR` File unit number for writing and reading the CR array.
+
+5. `ICV` File unit number for writing and reading the CV array.
+
+6. `ISC` File unit number for writing and reading the SC array.
+
+7. `IHCOF` File unit number for writing and reading the HCOF array.
+
+8. `ICB` File unit number for writing and reading the head-dependent boundary coefficients.
 
 
 ##### Dataset 3 #####
